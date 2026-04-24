@@ -1,0 +1,27 @@
+# MCP設定（トークンを含むため必ず除外）
+.vscode/mcp.json
+
+# 依存関係
+node_modules/
+
+# 環境変数
+.env
+.env.local
+.env.*.local
+
+# ビルド成果物
+dist/
+build/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ログ
+*.log
+npm-debug.log*
+
+# キャッシュ
+.cache/
+.next/
