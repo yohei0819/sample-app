@@ -10,7 +10,7 @@ export const findOrders = async (params: {
   const { status, take = 20, skip = 0 } = params
   return prisma.order.findMany({
     where: { ...(status ? { status } : {}) },
-    include: { user: true, items: { include: { product: true } } },
+    include: { user: { select: { id: true, email: true, name: true } }, items: { include: { product: true } } }, // 変更: passwordHash 露出防止
     take,
     skip,
     orderBy: { createdAt: 'desc' },
@@ -30,7 +30,7 @@ export const findOrdersByUserId = async (userId: string) => {
 export const findOrderById = async (id: string) => {
   return prisma.order.findUnique({
     where: { id },
-    include: { user: true, items: { include: { product: true } }, coupon: true },
+    include: { user: { select: { id: true, email: true, name: true } }, items: { include: { product: true } }, coupon: true }, // 変更: passwordHash 露出防止
   })
 }
 

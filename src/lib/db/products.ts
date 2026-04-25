@@ -53,26 +53,13 @@ export const deleteProduct = async (id: string): Promise<Product> => {
   return prisma.product.delete({ where: { id } })
 }
 
-// 在庫を減らす（注文確定時） - 在庫不足チェック付き
-export const decrementStock = async (id: string, quantity: number): Promise<Product> => {
-  return prisma.$transaction(async (tx) => {
-    // 現在の在庫を取得して不足チェック
-    const product = await tx.product.findUnique({
-      where: { id },
-      select: { stock: true },
-    })
-
-    if (!product) {
-      throw new Error(`商品が見つかりません: ${id}`)
-    }
-
-    if (product.stock < quantity) {
-      throw new Error(`在庫不足: 現在の在庫=${product.stock}, 要求数量=${quantity}`)
-    }
-
-    return tx.product.update({
-      where: { id },
-      data: { stock: { decrement: quantity } },
-    })
+// 在庫を減らす（注文確定時） - アトミックな updateMany でTOCTOU競合を防ぐ
+export const decrementStock = async (id: string, quantity: number): Promise<void> => {
+  const result = await prisma.product.updateMany({
+    where: { id, stock: { gte: quantity } },
+    data: { stock: { decrement: quantity } },
   })
+  if (result.count === 0) {
+    throw new Error('在庫が不足しています') // 変更
+  }
 }
