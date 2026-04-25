@@ -8,11 +8,13 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.production
 
 # ビルド成果物
 dist/
 build/
 out/
+.next/
 
 # OS
 .DS_Store
@@ -21,7 +23,19 @@ Thumbs.db
 # ログ
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # キャッシュ
 .cache/
-.next/
+.pnpm-store/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# テスト証跡
+tests/evidence/
