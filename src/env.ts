@@ -11,7 +11,7 @@ const envSchema = z.object({
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1),
-  STRIPE_PUBLISHABLE_KEY: z.string().min(1),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1), // 変更: クライアントサイド参照のためNEXT_PUBLIC_プレフィックスを付与
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
 
   // Cloudinary
