@@ -34,8 +34,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Prisma 生成ファイル
+src/generated/
+
 # Vercel
 .vercel
 
 # テスト証跡
 tests/evidence/
+
+/src/generated/prisma
