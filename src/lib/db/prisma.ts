@@ -7,7 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 const createPrismaClient = (): PrismaClient => {
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL })
+  // TODO: 将来的に src/env.ts（Zod）で DATABASE_URL を検証・型付けする予定
+  // 現時点では undefined の場合に実行時クラッシュを防ぐため非 null アサーションを使用する
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! })
   return new PrismaClient({ adapter })
 }
 

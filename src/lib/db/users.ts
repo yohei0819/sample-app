@@ -6,9 +6,19 @@ export const findUserByEmail = async (email: string) => {
   return prisma.user.findUnique({ where: { email } })
 }
 
-// IDでユーザーを取得
+// IDでユーザーを取得（OWASP A02対策: passwordHash を除外して返す）
 export const findUserById = async (id: string) => {
-  return prisma.user.findUnique({ where: { id } })
+  return prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  })
 }
 
 // ユーザー作成
