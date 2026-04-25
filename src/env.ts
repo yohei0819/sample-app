@@ -1,3 +1,4 @@
+import 'server-only' // サーバーサイドシークレット保護：クライアントバンドルへの混入を防止
 import { z } from 'zod'
 
 // 環境変数のスキーマ定義
