@@ -22,5 +22,7 @@ export default defineConfig({
     command: 'pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    // CI環境でのタイムアウトを120秒に設定（デフォルト60秒では重いアプリでタイムアウトの可能性あり）
+    timeout: 120_000,
   },
 })
