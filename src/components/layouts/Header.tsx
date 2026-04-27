@@ -1,8 +1,9 @@
 "use client"
 
 // ストアフロント用ヘッダー（Client Component）
-import { ShoppingBag, ShoppingCart, Menu, X } from 'lucide-react'
+import { ShoppingBag, ShoppingCart, Menu, X, LogOut, User } from 'lucide-react'
 import Link from 'next/link'
+import { signOut, useSession } from 'next-auth/react' // 追加: セッション管理
 import { useEffect, useState } from 'react' // 変更: useEffect を追加
 import { useCartStore } from '@/stores/cartStore'
 
@@ -13,6 +14,8 @@ export const Header = () => {
   const [mounted, setMounted] = useState(false)
   // カート合計個数
   const cartCount = useCartStore((state) => state.totalItems())
+  // 追加: セッション情報取得
+  const { data: session } = useSession()
 
   useEffect(() => {
     useCartStore.persist.rehydrate() // 追加: 他ページでもlocalStorageからカート状態を復元する
@@ -66,12 +69,38 @@ export const Header = () => {
               </span>
             )}
           </Link>
-          <Link
-            href="/login"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            ログイン
-          </Link>
+          {/* 追加: セッション状態に応じてログイン/ユーザー情報を切り替え */}
+          {session ? (
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <User size={16} aria-hidden="true" />
+                {session.user?.name ?? session.user?.email}
+              </span>
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="ログアウト"
+              >
+                <LogOut size={16} aria-hidden="true" />
+                ログアウト
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ログイン
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                会員登録
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* モバイルメニューボタン */}
@@ -114,13 +143,43 @@ export const Header = () => {
               <ShoppingCart size={20} />
               カート
             </Link>
-            <Link
-              href="/login"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              ログイン
-            </Link>
+            {/* 追加: モバイル用ログイン/ユーザーメニュー */}
+            {session ? (
+              <>
+                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <User size={16} aria-hidden="true" />
+                  {session.user?.name ?? session.user?.email}
+                </span>
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    signOut({ callbackUrl: '/' })
+                  }}
+                  className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="ログアウト"
+                >
+                  <LogOut size={16} aria-hidden="true" />
+                  ログアウト
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  ログイン
+                </Link>
+                <Link
+                  href="/register"
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  会員登録
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       )}
