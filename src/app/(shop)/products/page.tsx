@@ -14,14 +14,23 @@ export const metadata: Metadata = {
   description: '商品を検索・フィルター・ソートしてお好みの商品を見つけましょう。',
 }
 
+// 変更: string[] の可能性を含む正確な型定義（重複クエリパラメータ対応）
+type SearchParamValue = string | string[] | undefined
+
 type SearchParams = {
-  search?: string
-  categoryId?: string
-  sort?: string
+  search?: SearchParamValue
+  categoryId?: SearchParamValue
+  sort?: SearchParamValue
 }
 
 type Props = {
   searchParams: SearchParams
+}
+
+// 追加: string[] が渡された場合は最初の要素を取り出す安全なヘルパー
+const resolveParam = (value: SearchParamValue): string | undefined => {
+  if (Array.isArray(value)) return value[0]
+  return value
 }
 
 const SORT_ORDER_MAP: Record<string, Prisma.ProductOrderByWithRelationInput> = {
@@ -31,7 +40,10 @@ const SORT_ORDER_MAP: Record<string, Prisma.ProductOrderByWithRelationInput> = {
 }
 
 export default async function ProductsPage({ searchParams }: Props) {
-  const { search, categoryId, sort = 'newest' } = searchParams
+  // 変更: resolveParam で string[] を安全に string へ変換してから Prisma へ渡す
+  const search = resolveParam(searchParams.search)
+  const categoryId = resolveParam(searchParams.categoryId)
+  const sort = resolveParam(searchParams.sort) ?? 'newest'
   const orderBy = SORT_ORDER_MAP[sort] ?? { createdAt: 'desc' }
 
   // カテゴリ一覧とプロダクト一覧を並行取得（DBなし環境ではエラーをハンドリング）
