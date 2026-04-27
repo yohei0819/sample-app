@@ -1,10 +1,11 @@
 // 商品詳細表示コンポーネント（Server Component）
 import Image from 'next/image'
-import type { Product, Category } from '@/generated/prisma/client'
+import type { findProductById } from '@/lib/db/products'
 import { AddToCartButton } from './AddToCartButton'
 
+// 変更: ReturnTypeベースの型定義でスキーマ変更に嫹応
 type Props = {
-  product: Product & { category: Category | null }
+  product: NonNullable<Awaited<ReturnType<typeof findProductById>>>
 }
 
 export const ProductDetail = ({ product }: Props) => {

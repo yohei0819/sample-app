@@ -12,13 +12,14 @@ export const AddToCartButton = ({ productId, stock }: Props) => {
   const isOutOfStock = stock === 0
 
   const handleClick = () => {
-    // TODO: Zustandカートストアへの追加処理を実装する（productIdを使用）
+    // TODO: Zustandカートストアへの追加処理を実装する
+    // 将来実装: addToCart(productId)
+    void productId
   }
 
   return (
     <button
       type="button"
-      data-product-id={productId}
       onClick={handleClick}
       disabled={isOutOfStock}
       aria-label={isOutOfStock ? '在庫切れのため購入できません' : 'カートに追加する'}
