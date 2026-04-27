@@ -69,7 +69,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     jwt({ token, user }) {
       const t = token as JwtToken
       if (user) {
-        t.id = user.id as string
+        // 変更: user.id は string 型のため as string キャスト不要
+        t.id = user.id
         t.role = user.role
       }
       return token

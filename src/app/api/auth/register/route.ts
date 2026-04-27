@@ -1,6 +1,6 @@
 // 会員登録 API Route Handler
-import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { NextRequest, NextResponse } from 'next/server'
 import { findUserByEmail, createUser } from '@/lib/db/users'
 import { registerSchema } from '@/lib/validators/auth'
 import { BCRYPT_SALT_ROUNDS } from '@/constants/auth'
