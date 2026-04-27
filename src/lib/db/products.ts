@@ -94,3 +94,21 @@ export const findProductByIdForAdmin = async (id: string) => {
     include: { category: true },
   })
 }
+
+type CartItemInput = {
+  id: string
+  quantity: number
+}
+
+// 追加: カートアイテムの商品検証（存在・公開・在庫確認）を共通化
+export const validateCartItems = async (items: CartItemInput[]) => {
+  return Promise.all(
+    items.map(async ({ id, quantity }) => {
+      const product = await findProductById(id)
+      if (!product) throw new Error(`商品が見つかりません: ${id}`)
+      if (!product.isPublished) throw new Error(`非公開商品です: ${id}`)
+      if (product.stock < quantity) throw new Error(`在庫不足: ${product.name}`)
+      return { product, quantity }
+    })
+  )
+}

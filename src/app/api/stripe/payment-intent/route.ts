@@ -1,7 +1,7 @@
 // Stripe PaymentIntent 作成 API
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { findProductById } from '@/lib/db/products'
+import { validateCartItems } from '@/lib/db/products'
 import { stripe } from '@/lib/stripe'
 
 type CartItemInput = {
@@ -35,15 +35,7 @@ export const POST = async (req: NextRequest) => {
 
   try {
     // 各商品の最新価格・在庫を DB から取得して検証
-    const productData = await Promise.all(
-      items.map(async ({ id, quantity }) => {
-        const product = await findProductById(id)
-        if (!product) throw new Error(`商品が見つかりません: ${id}`)
-        if (!product.isPublished) throw new Error(`非公開商品です: ${id}`)
-        if (product.stock < quantity) throw new Error(`在庫不足: ${product.name}`)
-        return { product, quantity }
-      })
-    )
+    const productData = await validateCartItems(items)
 
     // 合計金額（円単位・税込10%）
     const subtotal = productData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0)

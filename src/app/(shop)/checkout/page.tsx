@@ -39,7 +39,6 @@ export default function CheckoutPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items: items.map(({ id, quantity }) => ({ id, quantity })),
-
           }),
         })
 
@@ -68,7 +67,8 @@ export default function CheckoutPage() {
     }
 
     void createPaymentIntent()
-  }, [mounted, items, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted])
 
   // 税込合計
   const tax = Math.floor(totalPrice() * 0.1)

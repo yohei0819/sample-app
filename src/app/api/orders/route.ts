@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createOrder } from '@/lib/db/orders'
-import { findProductById } from '@/lib/db/products'
+import { validateCartItems } from '@/lib/db/products'
+import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 
 type CartItemInput = {
@@ -40,15 +41,7 @@ export const POST = async (req: NextRequest) => {
 
   try {
     // 各商品の最新価格・在庫を DB から取得して検証
-    const productData = await Promise.all(
-      items.map(async ({ id, quantity }) => {
-        const product = await findProductById(id)
-        if (!product) throw new Error(`商品が見つかりません: ${id}`)
-        if (!product.isPublished) throw new Error(`非公開商品です: ${id}`)
-        if (product.stock < quantity) throw new Error(`在庫不足: ${product.name}`)
-        return { product, quantity }
-      })
-    )
+    const productData = await validateCartItems(items)
 
     // 合計金額（税込10%）
     const subtotal = productData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0)
@@ -59,7 +52,7 @@ export const POST = async (req: NextRequest) => {
       status: 'PENDING',
       totalPrice,
       stripePaymentIntentId,
-      shippingAddress: shippingAddress as unknown as import('@/generated/prisma/client').Prisma.InputJsonValue,
+      shippingAddress: shippingAddress as unknown as Prisma.InputJsonValue,
       user: { connect: { id: session.user.id } },
       items: {
         create: productData.map(({ product, quantity }) => ({
