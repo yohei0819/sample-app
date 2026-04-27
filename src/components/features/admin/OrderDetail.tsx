@@ -7,6 +7,17 @@ import { useState } from 'react'
 import { ORDER_STATUS_CLASS, ORDER_STATUS_LABEL } from '@/constants/admin'
 import type { Coupon, Order, OrderItem, OrderStatus, Product, User } from '@/generated/prisma/client'
 
+// 配送先住所の型定義
+type ShippingAddress = {
+  name?: string
+  postalCode?: string
+  prefecture?: string
+  city?: string
+  line1?: string
+  line2?: string
+  phone?: string
+}
+
 type OrderWithRelations = Order & {
   user: Pick<User, 'id' | 'email' | 'name'>
   items: (OrderItem & { product: Product })[]
@@ -74,17 +85,6 @@ export const OrderDetail = ({ order }: Props) => {
     } finally {
       setIsUpdating(false)
     }
-  }
-
-  // 配送先住所の型定義
-  type ShippingAddress = {
-    name?: string
-    postalCode?: string
-    prefecture?: string
-    city?: string
-    line1?: string
-    line2?: string
-    phone?: string
   }
 
   const shipping =

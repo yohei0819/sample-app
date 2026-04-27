@@ -1,8 +1,7 @@
 // 管理画面 注文一覧ページ（Server Component）
 import { Suspense } from 'react'
 import type { OrderStatus } from '@/generated/prisma/client'
-import { findOrders } from '@/lib/db/orders'
-import { countOrders } from '@/lib/db/orders'
+import { countOrders, findOrders } from '@/lib/db/orders'
 import { OrderTable } from '@/components/features/admin/OrderTable'
 import { ADMIN_ORDER_PAGE_SIZE } from '@/constants/admin'
 
@@ -44,7 +43,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         <p className="text-sm text-muted-foreground">注文の一覧・詳細確認・ステータス変更</p>
       </div>
 
-      <Suspense>
+      <Suspense fallback={<p className="text-sm text-muted-foreground">読み込み中...</p>}>
         <OrderTable
           orders={orders}
           total={total}

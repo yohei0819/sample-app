@@ -15,7 +15,7 @@ export const GET = async (req: NextRequest) => {
 
   const { searchParams } = req.nextUrl
   const statusParam = searchParams.get('status')
-  const take = Number(searchParams.get('take') ?? 20)
+  const take = Math.min(Number(searchParams.get('take') ?? 20), 100)
   const skip = Number(searchParams.get('skip') ?? 0)
 
   const status =

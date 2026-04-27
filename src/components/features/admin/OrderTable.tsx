@@ -164,6 +164,7 @@ export const OrderTable = ({ orders, total, currentPage, currentStatus }: Props)
             href={buildUrl(currentPage - 1, currentStatus)}
             aria-label="前のページ"
             aria-disabled={currentPage <= 1}
+            tabIndex={currentPage <= 1 ? -1 : undefined}
             className={`inline-flex items-center rounded p-1.5 transition-colors ${
               currentPage <= 1
                 ? 'pointer-events-none text-muted-foreground/40'
@@ -179,6 +180,7 @@ export const OrderTable = ({ orders, total, currentPage, currentStatus }: Props)
             href={buildUrl(currentPage + 1, currentStatus)}
             aria-label="次のページ"
             aria-disabled={currentPage >= totalPages}
+            tabIndex={currentPage >= totalPages ? -1 : undefined}
             className={`inline-flex items-center rounded p-1.5 transition-colors ${
               currentPage >= totalPages
                 ? 'pointer-events-none text-muted-foreground/40'
