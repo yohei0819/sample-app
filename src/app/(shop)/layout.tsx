@@ -1,17 +1,8 @@
 // ストアフロント用レイアウト
-import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { Header } from '@/components/layouts/Header'
 import { Footer } from '@/components/layouts/Footer'
-
-// ルートレイアウトのtitle templateを引き継ぐ
-export const metadata: Metadata = {
-  title: {
-    default: 'SampleShop',
-    template: '%s | SampleShop',
-  },
-  description: '上質なアイテムをお届けするオンラインショップ',
-}
+// metadataはルートの app/layout.tsx で一元管理
 
 type Props = {
   children: ReactNode
