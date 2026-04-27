@@ -95,6 +95,7 @@ model Order {
   coupon        Coupon?    @relation(fields: [couponId], references: [id])
 
   stripePaymentIntentId String?
+  shippingAddress       Json?   // 配送先住所
 
   @@map("orders")
 }

@@ -1,4 +1,5 @@
 // カート合計サマリーコンポーネント
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { TAX_RATE } from '@/constants/cart'
@@ -46,18 +47,12 @@ export const CartSummary = ({ totalItems, totalPrice }: Props) => {
         </div>
       </div>
 
-      {/* 変更: レジに進むボタン（アクセシビリティ修正：disabled + Linkを単一buttonに置換） */}
-      <Button
-        className="mt-6 w-full"
-        disabled
-        aria-label="チェックアウト（準備中）"
-      >
-        レジに進む（準備中）
+      {/* 変更: レジに進むボタン（チェックアウトページへのリンク） */}
+      <Button asChild className="mt-6 w-full">
+        <Link href="/checkout" aria-label="チェックアウトへ進む">
+          レジに進む
+        </Link>
       </Button>
-
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        ※チェックアウト機能は近日公開予定です
-      </p>
     </div>
   )
 }
