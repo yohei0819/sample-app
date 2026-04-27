@@ -1,4 +1,5 @@
 // ダッシュボード統計カードコンポーネント
+import type { ReactNode } from 'react'
 import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react'
 // 変更: コンポーネント名との衝突を避けるためエイリアスでインポート
 import type { DashboardStats as DashboardStatsData } from '@/lib/db/stats'
@@ -10,7 +11,8 @@ type Props = {
 type StatCard = {
   title: string
   value: string
-  icon: React.ReactNode
+  // 変更: React.ReactNode → ReactNode（明示的インポートに変更）
+  icon: ReactNode
   description: string
 }
 

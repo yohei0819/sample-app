@@ -1,5 +1,4 @@
 // 管理画面ダッシュボード（Server Component）
-import { Suspense } from 'react'
 import { DashboardStats } from '@/components/features/admin/DashboardStats'
 import { RecentOrders } from '@/components/features/admin/RecentOrders'
 import { getDashboardStats, getRecentOrders } from '@/lib/db/stats'
@@ -19,14 +18,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* 統計カード */}
-      <Suspense fallback={<div className="h-40 animate-pulse rounded-lg bg-muted" />}>
-        <DashboardStats stats={stats} />
-      </Suspense>
+      {/* 変更: await済みデータのため Suspense を削除（loading.tsx がルートSuspenseを担当） */}
+      <DashboardStats stats={stats} />
 
       {/* 最新注文一覧 */}
-      <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
-        <RecentOrders orders={recentOrders} />
-      </Suspense>
+      <RecentOrders orders={recentOrders} />
     </div>
   )
 }
