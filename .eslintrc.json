@@ -3,6 +3,11 @@
   "rules": {
     "no-console": ["warn", { "allow": ["error"] }],
     "@typescript-eslint/no-explicit-any": "error",
-    "prefer-const": "error"
+    "prefer-const": "error",
+    "import/order": ["warn", {
+      "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
+      "newlines-between": "never",
+      "alphabetize": { "order": "asc", "caseInsensitive": true }
+    }]
   }
 }
