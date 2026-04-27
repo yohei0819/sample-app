@@ -34,7 +34,7 @@ export const findProducts = async (params: {
 export const findProductById = async (id: string) => {
   return prisma.product.findFirst({
     where: { id, isPublished: true }, // 変更: 非公開商品を除外
-    include: { category: true, reviews: { where: { isPublic: true } } },
+    include: { category: true }, // 変更: レビュー表示機能が未実装のため reviews の include を除外
   })
 }
 
