@@ -1,11 +1,10 @@
 'use client'
 // 管理画面 注文一覧テーブルコンポーネント
-import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ADMIN_ORDER_PAGE_SIZE, ORDER_STATUS_CLASS, ORDER_STATUS_LABEL } from '@/constants/admin'
 import type { Order, OrderItem, Product, User } from '@/generated/prisma/client'
-import { ORDER_STATUS_CLASS, ORDER_STATUS_LABEL } from '@/constants/admin'
-import { ADMIN_ORDER_PAGE_SIZE } from '@/constants/admin'
 
 type OrderWithRelations = Order & {
   user: Pick<User, 'id' | 'email' | 'name'>
@@ -30,7 +29,6 @@ const STATUS_OPTIONS = [
 
 export const OrderTable = ({ orders, total, currentPage, currentStatus }: Props) => {
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   const totalPages = Math.ceil(total / ADMIN_ORDER_PAGE_SIZE)
 
