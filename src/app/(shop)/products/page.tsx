@@ -3,7 +3,7 @@ import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import type { Prisma } from '@/generated/prisma/client'
 import { findProducts } from '@/lib/db/products'
-import { prisma } from '@/lib/db/prisma'
+import { findAllCategories } from '@/lib/db/categories' // 変更: DB層のリポジトリ関数を使用
 import { ProductList } from '@/components/features/product/ProductList'
 import { ProductSearch } from '@/components/features/product/ProductSearch'
 import { ProductSort } from '@/components/features/product/ProductSort'
@@ -37,7 +37,7 @@ export default async function ProductsPage({ searchParams }: Props) {
   // カテゴリ一覧とプロダクト一覧を並行取得（DBなし環境ではエラーをハンドリング）
   const [products, categories] = await Promise.all([
     findProducts({ search, categoryId, orderBy }).catch(() => []),
-    prisma.category.findMany({ orderBy: { name: 'asc' } }).catch(() => []),
+    findAllCategories().catch(() => []), // 変更: リポジトリ関数経由に変更
   ])
 
   return (

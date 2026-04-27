@@ -1,28 +1,34 @@
 'use client'
 // キーワード検索コンポーネント（Client Component）
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useState, useEffect } from 'react' // 変更: controlled input用フックを追加
 
 export const ProductSearch = () => {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // 変更: controlled inputのローカル状態（URLと常に同期）
+  const [inputValue, setInputValue] = useState(searchParams.get('search') ?? '')
+
+  // 変更: 戻るボタン操作など、URLが外部から変化した場合に表示値を同期する
+  useEffect(() => {
+    setInputValue(searchParams.get('search') ?? '')
+  }, [searchParams])
+
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      const form = e.currentTarget
-      const input = form.elements.namedItem('search') as HTMLInputElement
       const params = new URLSearchParams(searchParams.toString())
-      if (input.value) {
-        params.set('search', input.value)
+      if (inputValue) {
+        params.set('search', inputValue)
       } else {
         params.delete('search')
       }
       params.delete('skip') // 検索時はページをリセット
       router.push(`${pathname}?${params.toString()}`)
     },
-    [router, pathname, searchParams],
+    [router, pathname, searchParams, inputValue],
   )
 
   return (
@@ -34,7 +40,8 @@ export const ProductSearch = () => {
         id="search"
         name="search"
         type="search"
-        defaultValue={searchParams.get('search') ?? ''}
+        value={inputValue}  // 変更: controlled inputに変更してURLとの乖離を防ぐ
+        onChange={(e) => setInputValue(e.target.value)}
         placeholder="商品を検索..."
         className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
         aria-label="商品を検索"

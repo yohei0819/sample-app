@@ -10,8 +10,11 @@ export const GET = async (request: NextRequest) => {
     const search = searchParams.get('search') ?? undefined
     const categoryId = searchParams.get('categoryId') ?? undefined
     const sort = searchParams.get('sort') ?? 'newest'
-    const take = Number(searchParams.get('take') ?? '20')
-    const skip = Number(searchParams.get('skip') ?? '0')
+    // 変更: NaN・負値を安全なデフォルト値に fallback する
+    const rawTake = Number(searchParams.get('take') ?? '20')
+    const rawSkip = Number(searchParams.get('skip') ?? '0')
+    const take = Number.isFinite(rawTake) && rawTake > 0 ? Math.floor(rawTake) : 20
+    const skip = Number.isFinite(rawSkip) && rawSkip >= 0 ? Math.floor(rawSkip) : 0
 
     const orderByMap: Record<string, Prisma.ProductOrderByWithRelationInput> = {
       newest: { createdAt: 'desc' },
