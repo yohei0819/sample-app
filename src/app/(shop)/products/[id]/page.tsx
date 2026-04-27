@@ -1,8 +1,12 @@
 // 商品詳細ページ（Server Component）
+import { cache } from 'react' // 追加
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { findProductById } from '@/lib/db/products'
 import { ProductDetail } from '@/components/features/product/ProductDetail'
+
+// 追加: React.cacheでラップして1リクエスト内のDBクエリ重複を解消
+const getCachedProductById = cache(findProductById)
 
 type Props = {
   params: { id: string }
@@ -10,7 +14,7 @@ type Props = {
 
 // OGPメタデータ生成
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
-  const product = await findProductById(params.id)
+  const product = await getCachedProductById(params.id) // 変更: キャッシュ経由で取得
   if (!product) {
     return { title: '商品が見つかりません' }
   }
@@ -26,7 +30,7 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
 }
 
 export default async function ProductDetailPage({ params }: Props) {
-  const product = await findProductById(params.id)
+  const product = await getCachedProductById(params.id) // 変更: キャッシュ経由で取得
 
   if (!product) {
     notFound()
