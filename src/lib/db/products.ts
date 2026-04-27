@@ -63,3 +63,34 @@ export const decrementStock = async (id: string, quantity: number): Promise<void
     throw new Error('在庫が不足しています') // 変更
   }
 }
+
+// 追加: 管理画面用商品一覧取得（非公開商品も含む）
+export const findAllProductsForAdmin = async (params: {
+  search?: string
+  take?: number
+  skip?: number
+} = {}) => {
+  const { search, take = 50, skip = 0 } = params
+  return prisma.product.findMany({
+    where: search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : undefined,
+    include: { category: true },
+    take,
+    skip,
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
+// 追加: 管理画面用商品1件取得（非公開商品も含む）
+export const findProductByIdForAdmin = async (id: string) => {
+  return prisma.product.findUnique({
+    where: { id },
+    include: { category: true },
+  })
+}
