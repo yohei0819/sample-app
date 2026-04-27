@@ -52,6 +52,18 @@ export const PATCH = async (req: NextRequest) => {
     })
     return NextResponse.json({ user })
   } catch (err) {
+    // Prisma のユニーク制約エラー（メールアドレス重複）を具体的にハンドリング
+    if (
+      err !== null &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as Record<string, unknown>).code === 'P2002'
+    ) {
+      return NextResponse.json(
+        { error: 'このメールアドレスはすでに使用されています', code: 'CONFLICT' },
+        { status: 409 }
+      )
+    }
     console.error('[account/profile PATCH] エラー:', err)
     return NextResponse.json({ error: 'プロフィールの更新に失敗しました', code: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }

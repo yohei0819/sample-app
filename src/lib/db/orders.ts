@@ -18,11 +18,14 @@ export const findOrders = async (params: {
 }
 
 // ユーザーの注文一覧取得
-export const findOrdersByUserId = async (userId: string) => {
+export const findOrdersByUserId = async (userId: string, params: { take?: number; skip?: number } = {}) => {
+  const { take, skip } = params
   return prisma.order.findMany({
     where: { userId },
     include: { items: { include: { product: true } } },
     orderBy: { createdAt: 'desc' },
+    ...(take !== undefined ? { take } : {}),
+    ...(skip !== undefined ? { skip } : {}),
   })
 }
 

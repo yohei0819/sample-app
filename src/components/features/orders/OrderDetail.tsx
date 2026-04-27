@@ -23,6 +23,7 @@ export const OrderDetail = ({ order }: Props) => {
   })
 
   const subtotal = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+  // TODO: クーポン割引が totalPrice に反映される場合、tax の逆算が不正確になる。クーポン実装時に要修正
   const tax = order.totalPrice - subtotal
 
   // shippingAddress は Json? 型なのでキャストして扱う

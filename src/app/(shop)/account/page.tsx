@@ -6,8 +6,8 @@ import { User } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { findUserById } from '@/lib/db/users'
 import { findOrdersByUserId } from '@/lib/db/orders'
+import { ProfileForm } from '@/components/features/account/ProfileForm'
 import { OrderCard } from '@/components/features/orders/OrderCard'
-import { ProfileForm } from '@/components/features/orders/ProfileForm'
 
 export const metadata: Metadata = {
   title: 'マイページ',
@@ -21,14 +21,14 @@ export default async function AccountPage() {
 
   const [user, orders] = await Promise.all([
     findUserById(session.user.id),
-    findOrdersByUserId(session.user.id),
+    findOrdersByUserId(session.user.id, { take: 3 }), // 変更: 直近3件のみ取得してパフォーマンス改善
   ])
 
   if (!user) {
     redirect('/login')
   }
 
-  const recentOrders = orders.slice(0, 3)
+  const recentOrders = orders
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
