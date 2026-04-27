@@ -30,11 +30,11 @@ export const findProducts = async (params: {
   })
 }
 
-// 商品1件取得
+// 商品1件取得（非公開商品は取得しない）
 export const findProductById = async (id: string) => {
-  return prisma.product.findUnique({
-    where: { id },
-    include: { category: true, reviews: { where: { isPublic: true } } },
+  return prisma.product.findFirst({
+    where: { id, isPublished: true }, // 変更: 非公開商品を除外
+    include: { category: true }, // 変更: レビュー表示機能が未実装のため reviews の include を除外
   })
 }
 
