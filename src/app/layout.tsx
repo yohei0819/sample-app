@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { AuthSessionProvider } from '@/components/providers/AuthSessionProvider' // 追加
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,7 +30,10 @@ export default function RootLayout({
   return (
     <html lang="ja">{/* 変更: 日本語ECサイトのためja指定 */}
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        {/* 追加: NextAuth v5 SessionProvider でラップ */}
+        <AuthSessionProvider>
+          {children}
+        </AuthSessionProvider>
       </body>
     </html>
   );
