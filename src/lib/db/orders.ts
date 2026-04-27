@@ -47,6 +47,14 @@ export const updateOrderStatus = async (id: string, status: OrderStatus) => {
   return prisma.order.update({ where: { id }, data: { status } })
 }
 
+// 注文件数取得（管理画面ページネーション用）
+export const countOrders = async (params: { status?: OrderStatus } = {}) => {
+  const { status } = params
+  return prisma.order.count({
+    where: { ...(status ? { status } : {}) },
+  })
+}
+
 // 追加: PaymentIntent ID を注文に紐付ける
 export const updateOrderStripeId = async (id: string, stripePaymentIntentId: string) => {
   return prisma.order.update({ where: { id }, data: { stripePaymentIntentId } })

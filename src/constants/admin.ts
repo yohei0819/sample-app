@@ -1,5 +1,8 @@
 // 管理画面関連定数
 
+// 注文一覧ページのページサイズ
+export const ADMIN_ORDER_PAGE_SIZE = 20
+
 // 注文ステータスの表示ラベル
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   PENDING: '未払い',
