@@ -14,7 +14,7 @@ export const AdminHeader = () => {
 
         {/* ナビゲーション */}
         <nav
-          className="flex items-center gap-4 sm:gap-6"
+          className="flex flex-wrap items-center gap-3 sm:gap-6"
           aria-label="管理画面ナビゲーション"
         >
           <Link
