@@ -1,7 +1,7 @@
-// 注文作成 API（チェックアウトフォーム送信時に呼ばれる）
+// 注文 API（一覧取得・作成）
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { createOrder } from '@/lib/db/orders'
+import { createOrder, findOrdersByUserId } from '@/lib/db/orders'
 import { validateCartItems } from '@/lib/db/products'
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
@@ -15,6 +15,22 @@ type RequestBody = {
   items: CartItemInput[]
   shippingAddress: ShippingAddress
   stripePaymentIntentId: string
+}
+
+// GET /api/orders - ログインユーザーの注文一覧取得
+export const GET = async () => {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: '認証が必要です', code: 'UNAUTHORIZED' }, { status: 401 })
+  }
+
+  try {
+    const orders = await findOrdersByUserId(session.user.id)
+    return NextResponse.json({ orders })
+  } catch (err) {
+    console.error('[orders GET] エラー:', err)
+    return NextResponse.json({ error: '注文一覧の取得に失敗しました', code: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
+  }
 }
 
 // POST /api/orders
