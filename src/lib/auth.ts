@@ -1,7 +1,10 @@
 // NextAuth v5（Auth.js）設定
+// 変更: server-only でクライアントバンドルへの混入を防止
+import 'server-only'
 import bcrypt from 'bcryptjs'
 import NextAuth, { type DefaultSession } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import { env } from '@/env'
 import { findUserByEmail } from '@/lib/db/users'
 
 // Session 型拡張：id・role フィールドを追加
@@ -17,11 +20,19 @@ declare module 'next-auth' {
   }
 }
 
+// 変更: next-auth v5 beta では next-auth/jwt モジュールが未公開のため
+// JWT カスタムフィールドは string インデックスで管理する
+type JwtToken = {
+  id?: string
+  role?: string
+  [key: string]: unknown
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // NEXTAUTH_SECRET を明示的に渡す
-  secret: process.env.NEXTAUTH_SECRET,
-  // 開発環境で HTTPS 必須チェックをスキップ
-  trustHost: true,
+  // 変更: env.ts（Zod バリデーション済み）から NEXTAUTH_SECRET を参照
+  secret: env.NEXTAUTH_SECRET,
+  // 変更: 開発環境のみ trustHost を有効化し本番では無効化
+  trustHost: env.NODE_ENV !== 'production',
   providers: [
     Credentials({
       credentials: {
@@ -56,16 +67,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     // JWT にユーザー情報を追加
     jwt({ token, user }) {
+      const t = token as JwtToken
       if (user) {
-        token['id'] = user.id as string
-        token['role'] = user.role
+        t.id = user.id as string
+        t.role = user.role
       }
       return token
     },
     // Session にユーザー情報を反映
     session({ session, token }) {
-      session.user.id = token['id'] as string
-      session.user.role = token['role'] as string
+      const t = token as JwtToken
+      session.user.id = t.id ?? ''
+      session.user.role = t.role ?? 'USER'
       return session
     },
   },
