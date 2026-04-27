@@ -86,19 +86,18 @@ export const useCartStore = create<CartStore>()(
       // 追加: localStorageから復元したデータのバリデーション
       onRehydrateStorage: () => (state) => {
         if (!state) return
-        // items が配列でない場合はリセット
-        if (!Array.isArray(state.items)) {
-          state.items = []
-        }
-        // 各アイテムの必須フィールドを検証
-        state.items = state.items.filter(
-          (item) =>
-            typeof item.id === 'string' &&
-            typeof item.name === 'string' &&
-            typeof item.price === 'number' &&
-            typeof item.quantity === 'number' &&
-            item.quantity > 0
-        )
+        // 変更: 直接ミューテーションではなく setState 経由で更新
+        const validItems = Array.isArray(state.items)
+          ? state.items.filter(
+              (item) =>
+                typeof item.id === 'string' &&
+                typeof item.name === 'string' &&
+                typeof item.price === 'number' &&
+                typeof item.quantity === 'number' &&
+                item.quantity > 0
+            )
+          : []
+        useCartStore.setState({ items: validItems })
       },
     }
   )

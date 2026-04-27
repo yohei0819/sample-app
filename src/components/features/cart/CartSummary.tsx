@@ -1,9 +1,8 @@
 // カート合計サマリーコンポーネント
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-
-// 消費税率（10%）
-const TAX_RATE = 0.1
+import { TAX_RATE } from '@/constants/cart'
+// 変更: TAX_RATEを定数ファイルからimport（コーディング規則: マジック数字を定数化）
 
 type Props = {
   totalItems: number
