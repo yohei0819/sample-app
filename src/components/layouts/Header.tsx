@@ -3,14 +3,20 @@
 // ストアフロント用ヘッダー（Client Component）
 import { ShoppingBag, ShoppingCart, Menu, X } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react' // 変更: useEffect を追加
 import { useCartStore } from '@/stores/cartStore'
 
 export const Header = () => {
   // モバイルメニューの開閉状態
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // 変更: SSRハイドレーション不一致防止のためマウント後にバッジを表示する
+  const [mounted, setMounted] = useState(false)
   // カート合計個数
   const cartCount = useCartStore((state) => state.totalItems())
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,8 +58,8 @@ export const Header = () => {
             className="relative text-muted-foreground transition-colors hover:text-foreground"
           >
             <ShoppingCart size={24} />
-            {/* カートバッジ（0件のときは非表示） */}
-            {cartCount > 0 && (
+            {/* 変更: カートバッジ（mountedかつ在庫ありのみ表示） */}
+            {mounted && cartCount > 0 && (
               <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                 {cartCount > 99 ? '99+' : cartCount}
               </span>

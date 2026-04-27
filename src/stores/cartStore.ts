@@ -80,6 +80,25 @@ export const useCartStore = create<CartStore>()(
     {
       // localStorageのキー名
       name: 'cart-storage',
+      // 変更: SSRハイドレーション不一致を防ぐため手動ハイドレーションに切り替え
+      skipHydration: true,
+      // 追加: localStorageから復元したデータのバリデーション
+      onRehydrateStorage: () => (state) => {
+        if (!state) return
+        // items が配列でない場合はリセット
+        if (!Array.isArray(state.items)) {
+          state.items = []
+        }
+        // 各アイテムの必須フィールドを検証
+        state.items = state.items.filter(
+          (item) =>
+            typeof item.id === 'string' &&
+            typeof item.name === 'string' &&
+            typeof item.price === 'number' &&
+            typeof item.quantity === 'number' &&
+            item.quantity > 0
+        )
+      },
     }
   )
 )
