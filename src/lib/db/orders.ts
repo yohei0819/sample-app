@@ -43,3 +43,16 @@ export const createOrder = async (data: Prisma.OrderCreateInput) => {
 export const updateOrderStatus = async (id: string, status: OrderStatus) => {
   return prisma.order.update({ where: { id }, data: { status } })
 }
+
+// 追加: PaymentIntent ID を注文に紐付ける
+export const updateOrderStripeId = async (id: string, stripePaymentIntentId: string) => {
+  return prisma.order.update({ where: { id }, data: { stripePaymentIntentId } })
+}
+
+// 追加: PaymentIntent ID で注文を検索して PAID に更新
+export const updateOrderToPaidByStripeId = async (stripePaymentIntentId: string) => {
+  return prisma.order.updateMany({
+    where: { stripePaymentIntentId },
+    data: { status: 'PAID' },
+  })
+}
