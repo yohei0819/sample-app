@@ -1,4 +1,6 @@
 // カートページ ローディングUI（スケルトン）
+import { CART_SKELETON_COUNT } from '@/constants/cart' // 追加
+
 export default function CartLoading() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -8,7 +10,7 @@ export default function CartLoading() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* カートアイテムスケルトン */}
         <div className="lg:col-span-2">
-          {[1, 2, 3].map((i) => (
+          {Array.from({ length: CART_SKELETON_COUNT }, (_, i) => i).map((i) => ( // 変更: 定数化
             <div key={i} className="flex items-center gap-4 border-b py-4">
               <div className="h-24 w-24 flex-shrink-0 animate-pulse rounded-md bg-muted" />
               <div className="flex flex-1 flex-col gap-2">

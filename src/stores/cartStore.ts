@@ -1,6 +1,7 @@
 // カートの状態管理ストア（Zustand + localStorage永続化）
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { CART_STORAGE_KEY } from '@/constants/cart' // 追加
 
 // カートアイテムの型
 export type CartItem = {
@@ -79,7 +80,7 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       // localStorageのキー名
-      name: 'cart-storage',
+      name: CART_STORAGE_KEY, // 変更: 定数化
       // 変更: SSRハイドレーション不一致を防ぐため手動ハイドレーションに切り替え
       skipHydration: true,
       // 追加: localStorageから復元したデータのバリデーション

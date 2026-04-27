@@ -15,6 +15,7 @@ export const Header = () => {
   const cartCount = useCartStore((state) => state.totalItems())
 
   useEffect(() => {
+    useCartStore.persist.rehydrate() // 追加: 他ページでもlocalStorageからカート状態を復元する
     setMounted(true)
   }, [])
 
