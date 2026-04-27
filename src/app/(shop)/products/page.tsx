@@ -46,10 +46,10 @@ export default async function ProductsPage({ searchParams }: Props) {
   const sort = resolveParam(searchParams.sort) ?? 'newest'
   const orderBy = SORT_ORDER_MAP[sort] ?? { createdAt: 'desc' }
 
-  // カテゴリ一覧とプロダクト一覧を並行取得（DBなし環境ではエラーをハンドリング）
+  // カテゴリ一覧とプロダクト一覧を並行取得（エラー時は error.tsx に伝播させる）
   const [products, categories] = await Promise.all([
-    findProducts({ search, categoryId, orderBy }).catch(() => []),
-    findAllCategories().catch(() => []), // 変更: リポジトリ関数経由に変更
+    findProducts({ search, categoryId, orderBy }),
+    findAllCategories(), // 変更: リポジトリ関数経由に変更
   ])
 
   return (
