@@ -1,13 +1,23 @@
 "use client"
 
 // ストアフロント用ヘッダー（Client Component）
-import { useState } from 'react'
-import Link from 'next/link'
 import { ShoppingBag, ShoppingCart, Menu, X } from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react' // 変更: useEffect を追加
+import { useCartStore } from '@/stores/cartStore'
 
 export const Header = () => {
   // モバイルメニューの開閉状態
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // 変更: SSRハイドレーション不一致防止のためマウント後にバッジを表示する
+  const [mounted, setMounted] = useState(false)
+  // カート合計個数
+  const cartCount = useCartStore((state) => state.totalItems())
+
+  useEffect(() => {
+    useCartStore.persist.rehydrate() // 追加: 他ページでもlocalStorageからカート状態を復元する
+    setMounted(true)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,10 +55,16 @@ export const Header = () => {
         <div className="hidden items-center gap-4 md:flex">
           <Link
             href="/cart"
-            aria-label="カートを見る"
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label={`カートを見る${cartCount > 0 ? `（${cartCount}点）` : ''}`}
+            className="relative text-muted-foreground transition-colors hover:text-foreground"
           >
             <ShoppingCart size={24} />
+            {/* 変更: カートバッジ（mountedかつ在庫ありのみ表示） */}
+            {mounted && cartCount > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </Link>
           <Link
             href="/login"
