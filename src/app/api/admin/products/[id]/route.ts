@@ -1,16 +1,8 @@
 // 管理画面 商品更新・削除 API
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { findProductByIdForAdmin, updateProduct, deleteProduct } from '@/lib/db/products'
+import { requireAdmin } from '@/lib/admin-auth'
+import { deleteProduct, findProductByIdForAdmin, updateProduct } from '@/lib/db/products'
 import { productSchema } from '@/lib/validators/product'
-
-// 管理者チェック共通処理
-const requireAdmin = async () => {
-  const session = await auth()
-  if (!session?.user) return { error: '認証が必要です', status: 401 }
-  if (session.user.role !== 'ADMIN') return { error: '管理者権限が必要です', status: 403 }
-  return { session }
-}
 
 // PUT /api/admin/products/[id] - 商品更新
 export const PUT = async (

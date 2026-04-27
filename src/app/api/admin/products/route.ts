@@ -1,17 +1,9 @@
 // 管理画面 商品一覧・作成 API
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { createProduct, findAllProductsForAdmin } from '@/lib/db/products'
+import { requireAdmin } from '@/lib/admin-auth'
 import { findAllCategories } from '@/lib/db/categories'
+import { createProduct, findAllProductsForAdmin } from '@/lib/db/products'
 import { productSchema } from '@/lib/validators/product'
-
-// 管理者チェック共通処理
-const requireAdmin = async () => {
-  const session = await auth()
-  if (!session?.user) return { error: '認証が必要です', status: 401 }
-  if (session.user.role !== 'ADMIN') return { error: '管理者権限が必要です', status: 403 }
-  return { session }
-}
 
 // GET /api/admin/products - 商品一覧取得
 export const GET = async (req: NextRequest) => {
