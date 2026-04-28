@@ -2,10 +2,31 @@
 // チェックアウトページ（認証チェック + PaymentIntent 取得 + Stripe Elements レンダリング）
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Elements } from '@stripe/react-stripe-js'
+import dynamic from 'next/dynamic' // 追加
 import { loadStripe } from '@stripe/stripe-js'
-import { CheckoutForm } from '@/components/features/checkout/CheckoutForm'
 import { useCartStore } from '@/stores/cartStore'
+
+// 追加: Stripe Elements と CheckoutForm を遅延読み込みして初期バンドルを削減
+const Elements = dynamic(
+  () => import('@stripe/react-stripe-js').then((mod) => mod.Elements),
+  { ssr: false },
+)
+const CheckoutForm = dynamic(
+  () =>
+    import('@/components/features/checkout/CheckoutForm').then((mod) => ({
+      default: mod.CheckoutForm,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-10 rounded bg-muted" />
+        <div className="h-10 rounded bg-muted" />
+        <div className="h-32 rounded bg-muted" />
+      </div>
+    ),
+  },
+)
 
 // Stripe publishable key（クライアントサイド）
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')

@@ -4,6 +4,9 @@ import { Plus } from 'lucide-react'
 import { ProductTable } from '@/components/features/admin/ProductTable'
 import { findAllProductsForAdmin } from '@/lib/db/products'
 
+// 追加: 管理画面はDB必須のため動的レンダリングを強制
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: '商品管理 | 管理画面',
 }

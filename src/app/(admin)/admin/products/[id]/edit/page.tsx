@@ -6,6 +6,9 @@ import { ProductForm } from '@/components/features/admin/ProductForm'
 import { findProductByIdForAdmin } from '@/lib/db/products'
 import { findAllCategories } from '@/lib/db/categories'
 
+// 追加: 管理画面はDB必須のため動的レンダリングを強制
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: '商品編集 | 管理画面',
 }

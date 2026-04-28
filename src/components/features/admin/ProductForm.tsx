@@ -3,9 +3,21 @@
 import { useRouter } from 'next/navigation'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import dynamic from 'next/dynamic' // 追加
 import type { Category } from '@/generated/prisma/client'
 import { productSchema, type ProductFormValues } from '@/lib/validators/product'
-import { ImageUploader } from '@/components/features/admin/ImageUploader'
+
+// 追加: ImageUploader は Cloudinary アップロード処理を含み重いため遅延読み込み
+const ImageUploader = dynamic(
+  () =>
+    import('@/components/features/admin/ImageUploader').then((mod) => ({
+      default: mod.ImageUploader,
+    })),
+  {
+    ssr: false,
+    loading: () => <div className="h-32 animate-pulse rounded-md bg-muted" aria-label="読み込み中" />,
+  },
+)
 
 type Props = {
   // 編集時は初期値を渡す（新規作成時は undefined）
