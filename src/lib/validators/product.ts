@@ -14,6 +14,10 @@ export const productSchema = z.object({
     .min(0, '在庫数は0以上で入力してください'),
   categoryId: z.string().optional(),
   isPublished: z.boolean(),
+  // 追加: 商品画像 URL 配列（最大10枚）
+  images: z
+    .array(z.string().url('画像URLの形式が不正です'))
+    .max(10, '画像は最大10枚までです'),
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

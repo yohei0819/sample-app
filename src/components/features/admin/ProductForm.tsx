@@ -1,10 +1,11 @@
 'use client'
 // 商品フォームコンポーネント（新規作成・編集共用）
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Category } from '@/generated/prisma/client'
 import { productSchema, type ProductFormValues } from '@/lib/validators/product'
+import { ImageUploader } from '@/components/features/admin/ImageUploader'
 
 type Props = {
   // 編集時は初期値を渡す（新規作成時は undefined）
@@ -20,6 +21,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -30,6 +32,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
       stock: 0,
       categoryId: '',
       isPublished: true,
+      images: [],
       ...defaultValues,
     },
   })
@@ -151,7 +154,20 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
         </select>
       </div>
 
-      {/* TODO: 画像アップロード（Cloudinary or Vercel Blob）は未実装 */}
+      {/* 追加: 画像アップロード（Cloudinary連携） */}
+      <div className="space-y-1">
+        <p className="block text-sm font-medium">商品画像</p>
+        <Controller
+          control={control}
+          name="images"
+          render={({ field }) => (
+            <ImageUploader value={field.value ?? []} onChange={field.onChange} />
+          )}
+        />
+        {errors.images && (
+          <p role="alert" className="text-xs text-red-500">{errors.images.message}</p>
+        )}
+      </div>
 
       {/* 公開設定 */}
       <div className="flex items-center gap-3">
