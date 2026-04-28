@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Lint / TypeCheck / Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      # ビルド・型チェック時にzodバリデーションを通すためのダミー環境変数
+      DATABASE_URL: postgresql://user:pass@localhost:5432/test
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-dummy-secret
+      STRIPE_SECRET_KEY: sk_test_dummy
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_dummy
+      CLOUDINARY_CLOUD_NAME: dummy
+      CLOUDINARY_API_KEY: dummy
+      CLOUDINARY_API_SECRET: dummy
+      RESEND_API_KEY: re_dummy
+      EMAIL_FROM: onboarding@resend.dev
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Unit test
+        run: pnpm test
