@@ -6,6 +6,7 @@ import { validateCartItems } from '@/lib/db/products'
 import { findCouponByCode, incrementCouponUsedCountAtomic } from '@/lib/db/coupons' // 変更
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
+import { sendOrderConfirmationEmail } from '@/lib/email/sendOrderConfirmation' // 追加
 
 type CartItemInput = {
   id: string
@@ -120,6 +121,23 @@ export const POST = async (req: NextRequest) => {
         })),
       },
     })
+
+    // 追加: 注文確認メール送信（失敗してもorderレスポンスは正常に返す）
+    if (session.user.email) {
+      await sendOrderConfirmationEmail({
+        to: session.user.email,
+        order: {
+          id: order.id,
+          totalPrice: order.totalPrice,
+          shippingAddress,
+        },
+        items: productData.map(({ product, quantity }) => ({
+          productName: product.name,
+          quantity,
+          unitPrice: product.price,
+        })),
+      })
+    }
 
     return NextResponse.json({ orderId: order.id }, { status: 201 })
   } catch (err) {
