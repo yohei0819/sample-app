@@ -14,7 +14,7 @@ const addWishlistSchema = z.object({
 })
 
 // GET /api/wishlist - ウィッシュリスト一覧取得（要認証）
-export const GET = async (_req: NextRequest) => {
+export const GET = async () => {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json(
