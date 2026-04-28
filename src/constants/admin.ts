@@ -3,6 +3,9 @@
 // 注文一覧ページのページサイズ
 export const ADMIN_ORDER_PAGE_SIZE = 20
 
+// 在庫少ない判定の閾値（この数以下を「残りわずか」と表示）
+export const STOCK_LOW_THRESHOLD = 5
+
 // レビュー一覧ページのページサイズ
 export const ADMIN_REVIEW_PAGE_SIZE = 20
 
