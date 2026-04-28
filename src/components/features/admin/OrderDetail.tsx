@@ -60,8 +60,8 @@ export const OrderDetail = ({ order }: Props) => {
     setErrorMsg(null)
 
     try {
-      const res = await fetch(`/api/admin/orders/${order.id}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/admin/orders/${order.id}/status`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       })
