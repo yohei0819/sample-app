@@ -19,12 +19,11 @@ export type OrderConfirmationItem = {
 // 数値を日本円表記にフォーマット
 const formatJpy = (value: number): string => `¥${value.toLocaleString('ja-JP')}`
 
-// 注文確認メールのHTMLを生成する純粋関数
-export const renderOrderConfirmationHtml = (
-  order: OrderConfirmationOrder,
+// 追加: 注文明細をHTML（tr行）に変換する純粋関数（DBテンプレート利用時の {{itemsHtml}} にも使う）
+export const renderOrderConfirmationItemsHtml = (
   items: OrderConfirmationItem[],
 ): string => {
-  const itemsHtml = items
+  return items
     .map(
       (item) => `
         <tr>
@@ -35,6 +34,17 @@ export const renderOrderConfirmationHtml = (
         </tr>`,
     )
     .join('')
+}
+
+// 追加: 円フォーマットを外部に公開（送信関数からの利用）
+export const formatOrderJpy = formatJpy
+
+// 注文確認メールのHTMLを生成する純粋関数
+export const renderOrderConfirmationHtml = (
+  order: OrderConfirmationOrder,
+  items: OrderConfirmationItem[],
+): string => {
+  const itemsHtml = renderOrderConfirmationItemsHtml(items)
 
   const addr = order.shippingAddress
   const addressHtml = `
