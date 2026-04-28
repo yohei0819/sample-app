@@ -7,6 +7,7 @@ import { findCouponByCode, incrementCouponUsedCountAtomic } from '@/lib/db/coupo
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 import { sendOrderConfirmationEmail } from '@/lib/email/sendOrderConfirmation' // 追加
+import { enforceRateLimit } from '@/lib/rateLimit'
 
 type CartItemInput = {
   id: string
@@ -38,6 +39,10 @@ export const GET = async () => {
 
 // POST /api/orders
 export const POST = async (req: NextRequest) => {
+  // 追加: レート制限（不正な連続注文作成を防ぐ）
+  const limited = enforceRateLimit('ORDER_CREATE', req)
+  if (limited) return limited
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: '認証が必要です', code: 'UNAUTHORIZED' }, { status: 401 })
