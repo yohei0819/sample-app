@@ -4,8 +4,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { findUserByEmail, createUser } from '@/lib/db/users'
 import { registerSchema } from '@/lib/validators/auth'
 import { BCRYPT_SALT_ROUNDS } from '@/constants/auth'
+import { enforceRateLimit } from '@/lib/rateLimit'
 
 export const POST = async (req: NextRequest) => {
+  // 追加: レート制限（IPごとに一定回数まで）
+  const limited = enforceRateLimit('AUTH_REGISTER', req)
+  if (limited) return limited
+
   try {
     const body: unknown = await req.json()
 

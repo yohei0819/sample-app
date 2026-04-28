@@ -8,10 +8,15 @@ import {
   MAX_IMAGE_BYTES,
   UPLOAD_ERROR_CODE,
 } from '@/constants/upload'
+import { enforceRateLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
 export const POST = async (req: Request) => {
+  // 追加: レート制限
+  const limited = enforceRateLimit('ADMIN_UPLOAD', req)
+  if (limited) return limited
+
   // 管理者チェック
   const check = await requireAdmin()
   if ('error' in check) {

@@ -15,6 +15,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // 追加: server-only はテスト環境ではダミー化（Server Component 限定の制約をバイパス）
+      'server-only': path.resolve(__dirname, './src/test/server-only-shim.ts'),
     },
   },
 })

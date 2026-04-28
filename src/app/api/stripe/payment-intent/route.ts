@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { validateCartItems } from '@/lib/db/products'
 import { findCouponByCode } from '@/lib/db/coupons' // 追加
 import { stripe } from '@/lib/stripe'
+import { enforceRateLimit } from '@/lib/rateLimit'
 
 type CartItemInput = {
   id: string
@@ -17,6 +18,10 @@ type RequestBody = {
 
 // POST /api/stripe/payment-intent
 export const POST = async (req: NextRequest) => {
+  // 追加: レート制限
+  const limited = enforceRateLimit('PAYMENT_INTENT', req)
+  if (limited) return limited
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: '認証が必要です', code: 'UNAUTHORIZED' }, { status: 401 })
