@@ -63,7 +63,7 @@ export const CouponForm = () => {
           {...register('code')}
         />
         {errors.code && (
-          <p id="code-error" className="text-sm text-destructive">{errors.code.message}</p>
+          <p id="code-error" role="alert" className="text-sm text-destructive">{errors.code.message}</p>
         )}
         <p className="text-xs text-muted-foreground">大文字英数字・アンダースコア・ハイフンのみ（例：SUMMER20、SALE_10）</p>
       </div>
@@ -83,7 +83,7 @@ export const CouponForm = () => {
           {...register('discountPct', { valueAsNumber: true })}
         />
         {errors.discountPct && (
-          <p id="discountPct-error" className="text-sm text-destructive">{errors.discountPct.message}</p>
+          <p id="discountPct-error" role="alert" className="text-sm text-destructive">{errors.discountPct.message}</p>
         )}
       </div>
 
@@ -104,7 +104,7 @@ export const CouponForm = () => {
           })}
         />
         {errors.maxUses && (
-          <p id="maxUses-error" className="text-sm text-destructive">{errors.maxUses.message}</p>
+          <p id="maxUses-error" role="alert" className="text-sm text-destructive">{errors.maxUses.message}</p>
         )}
       </div>
 
@@ -123,7 +123,7 @@ export const CouponForm = () => {
           })}
         />
         {errors.expiresAt && (
-          <p id="expiresAt-error" className="text-sm text-destructive">{errors.expiresAt.message as string}</p>
+          <p id="expiresAt-error" role="alert" className="text-sm text-destructive">{errors.expiresAt.message as string}</p>
         )}
       </div>
 

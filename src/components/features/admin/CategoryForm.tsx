@@ -71,7 +71,7 @@ export const CategoryForm = ({ defaultValues, categoryId }: Props) => {
           {...register('name')}
         />
         {errors.name && (
-          <p id="name-error" className="text-sm text-destructive">{errors.name.message}</p>
+          <p id="name-error" role="alert" className="text-sm text-destructive">{errors.name.message}</p>
         )}
       </div>
 
@@ -89,7 +89,7 @@ export const CategoryForm = ({ defaultValues, categoryId }: Props) => {
           {...register('slug')}
         />
         {errors.slug && (
-          <p id="slug-error" className="text-sm text-destructive">{errors.slug.message}</p>
+          <p id="slug-error" role="alert" className="text-sm text-destructive">{errors.slug.message}</p>
         )}
         <p className="text-xs text-muted-foreground">半角英数字とハイフンのみ使用できます（例：mens-tops）</p>
       </div>
