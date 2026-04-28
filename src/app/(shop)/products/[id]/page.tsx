@@ -6,6 +6,7 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { findProductById } from '@/lib/db/products'
 import { findReviewByUserAndProduct } from '@/lib/db/reviews'
+import { getReviewStatsByProductId } from '@/lib/db/reviews' // 追加: aggregateRating用
 import { isProductInWishlist } from '@/lib/db/wishlist' // 追加
 import { ProductDetail } from '@/components/features/product/ProductDetail'
 import { ReviewForm } from '@/components/features/review/ReviewForm'
@@ -59,6 +60,9 @@ export default async function ProductDetailPage({ params }: Props) {
   }
 
   // 追加: 商品 構造化データ（JSON-LD）
+  // 追加: レビュー集計を取得し aggregateRating を埋め込む
+  const reviewStats = await getReviewStatsByProductId(product.id)
+  const productUrl = `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/products/${product.id}`
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -73,8 +77,44 @@ export default async function ProductDetailPage({ params }: Props) {
         product.stock > 0
           ? 'https://schema.org/InStock'
           : 'https://schema.org/OutOfStock',
-      url: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/products/${product.id}`,
+      url: productUrl,
     },
+    // 追加: レビューがある場合のみ aggregateRating を埋め込む
+    ...(reviewStats.count > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: reviewStats.average.toFixed(1),
+            reviewCount: reviewStats.count,
+          },
+        }
+      : {}),
+  }
+
+  // 追加: パンくずの構造化データ
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'トップ',
+        item: env.NEXT_PUBLIC_APP_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: '商品一覧',
+        item: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/products`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.name,
+        item: productUrl,
+      },
+    ],
   }
 
   // ログイン状態・レビュー済み確認
@@ -92,6 +132,11 @@ export default async function ProductDetailPage({ params }: Props) {
         type="application/ld+json"
         // 変更: safeJsonLd で '<' をエスケープし XSS / </script> 離脱を防止
         dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }}
+      />
+      {/* 追加: パンくずの構造化データ */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }}
       />
       <ProductDetail
         product={product}

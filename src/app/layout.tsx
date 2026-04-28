@@ -58,6 +58,19 @@ const organizationJsonLd = {
   logo: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}${DEFAULT_OG_IMAGE}`,
 }
 
+// 追加: WebSite 構造化データ（サイト内検索の SearchAction を含む）
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_NAME,
+  url: env.NEXT_PUBLIC_APP_URL,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/products?search={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+}
+
 // Next.js規約上 RootLayout は default export が必須のため例外的に使用
 export default function RootLayout({
   children,
@@ -72,6 +85,11 @@ export default function RootLayout({
           type="application/ld+json"
           // 変更: safeJsonLd で '<' をエスケープし XSS / </script> 離脱を防止
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
+        />
+        {/* 追加: WebSite 構造化データ（サイト内検索 SearchAction） */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }}
         />
         {/* 追加: NextAuth v5 SessionProvider でラップ */}
         <AuthSessionProvider>
