@@ -3,6 +3,9 @@
 // 注文一覧ページのページサイズ
 export const ADMIN_ORDER_PAGE_SIZE = 20
 
+// レビュー一覧ページのページサイズ
+export const ADMIN_REVIEW_PAGE_SIZE = 20
+
 // 注文ステータスの表示ラベル
 export const ORDER_STATUS_LABEL: Record<string, string> = {
   PENDING: '未払い',

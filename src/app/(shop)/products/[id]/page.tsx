@@ -1,9 +1,14 @@
 // 商品詳細ページ（Server Component）
 import { cache } from 'react' // 追加
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { auth } from '@/lib/auth'
 import { findProductById } from '@/lib/db/products'
+import { findReviewByUserAndProduct } from '@/lib/db/reviews'
 import { ProductDetail } from '@/components/features/product/ProductDetail'
+import { ReviewForm } from '@/components/features/review/ReviewForm'
+import { ReviewList } from '@/components/features/review/ReviewList'
 
 // 追加: React.cacheでラップして1リクエスト内のDBクエリ重複を解消
 const getCachedProductById = cache(findProductById)
@@ -36,5 +41,28 @@ export default async function ProductDetailPage({ params }: Props) {
     notFound()
   }
 
-  return <ProductDetail product={product} />
+  // ログイン状態・レビュー済み確認
+  const session = await auth()
+  const userId = session?.user?.id ?? null
+  const hasReviewed = userId
+    ? !!(await findReviewByUserAndProduct(userId, product.id))
+    : false
+
+  return (
+    <div>
+      <ProductDetail product={product} />
+      {/* レビューセクション */}
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <Suspense fallback={<p className="text-sm text-muted-foreground">レビューを読み込み中...</p>}>
+          <ReviewList productId={product.id} />
+        </Suspense>
+        {/* レビュー投稿フォーム */}
+        <ReviewForm
+          productId={product.id}
+          isLoggedIn={!!userId}
+          hasReviewed={hasReviewed}
+        />
+      </div>
+    </div>
+  )
 }
