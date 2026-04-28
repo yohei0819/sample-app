@@ -70,6 +70,13 @@ export const AdminHeader = () => {
           >
             レビュー管理
           </Link>
+          {/* 追加: メールテンプレート管理 */}
+          <Link
+            href="/admin/email-templates"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            メールテンプレート
+          </Link>
         </nav>
       </div>
     </header>

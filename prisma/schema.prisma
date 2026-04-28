@@ -25,6 +25,25 @@ enum OrderStatus {
   CANCELLED
 }
 
+// 追加: メール通知テンプレート種別
+enum EmailTemplateKey {
+  ORDER_CONFIRMATION
+  SHIPMENT_NOTIFICATION
+  BACK_IN_STOCK
+}
+
+// 追加: メール通知テンプレートモデル
+model EmailTemplate {
+  id        String           @id @default(cuid())
+  key       EmailTemplateKey @unique
+  subject   String
+  bodyHtml  String
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@map("email_templates")
+}
+
 // ----- ユーザー -----
 model User {
   id           String   @id @default(cuid())

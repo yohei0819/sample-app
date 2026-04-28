@@ -6,6 +6,10 @@ import {
   renderBackInStockNotificationHtml,
   type BackInStockProduct,
 } from '@/lib/email/templates/backInStockNotification'
+import { getEmailTemplateOrFallback } from '@/lib/db/emailTemplates' // 追加
+import { applyTemplateVariables } from '@/lib/email/templateEngine' // 追加
+import { escapeHtml } from '@/lib/email/utils' // 追加
+import { EmailTemplateKey } from '@/generated/prisma/enums' // 追加
 
 // 戻り値型
 type SendResult = { success: boolean; error?: string }
@@ -18,11 +22,30 @@ export const sendBackInStockNotificationEmail = async (params: {
 }): Promise<SendResult> => {
   const { to, product } = params
   try {
-    const html = renderBackInStockNotificationHtml(product, env.NEXT_PUBLIC_APP_URL)
+    // 追加: DBにカスタムテンプレートがあれば優先使用
+    const productUrl = `${env.NEXT_PUBLIC_APP_URL}/products/${encodeURIComponent(product.id)}`
+    const fallbackHtml = renderBackInStockNotificationHtml(product, env.NEXT_PUBLIC_APP_URL)
+    const tpl = await getEmailTemplateOrFallback(EmailTemplateKey.BACK_IN_STOCK, {
+      subject: EMAIL_SUBJECTS.BACK_IN_STOCK,
+      bodyHtml: fallbackHtml,
+    })
+
+    let subject = tpl.subject
+    let html = tpl.bodyHtml
+
+    if (tpl.isCustom) {
+      const vars = {
+        productName: escapeHtml(product.name),
+        productUrl: escapeHtml(productUrl),
+      }
+      subject = applyTemplateVariables(tpl.subject, vars)
+      html = applyTemplateVariables(tpl.bodyHtml, vars)
+    }
+
     await resend.emails.send({
       from: env.EMAIL_FROM,
       to,
-      subject: EMAIL_SUBJECTS.BACK_IN_STOCK,
+      subject,
       html,
     })
     return { success: true }
