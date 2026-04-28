@@ -32,3 +32,14 @@ export const ADMIN_COUPON_PAGE_SIZE = 50
 
 // クーポンコードの最大文字数 // 追加
 export const COUPON_CODE_MAX_LENGTH = 32
+
+// 追加: ユーザーロール一覧
+export const USER_ROLES = ['USER', 'ADMIN'] as const
+export type UserRole = (typeof USER_ROLES)[number]
+
+// 追加: ユーザーロールの表示ラベル
+export const USER_ROLE_LABEL: Record<UserRole, string> = {
+  USER: '一般',
+  ADMIN: '管理者',
+}
+
