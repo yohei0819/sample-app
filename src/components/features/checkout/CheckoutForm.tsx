@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { CHECKOUT_SUCCESS_PATH } from '@/constants/checkout'
 import { useCartStore } from '@/stores/cartStore'
+import { CouponInput } from './CouponInput' // 追加
 
 // 配送先フォームのバリデーションスキーマ
 const shippingSchema = z.object({
@@ -26,12 +27,21 @@ const shippingSchema = z.object({
 
 type ShippingFormValues = z.infer<typeof shippingSchema>
 
+// 適用済みクーポン型 // 追加
+type AppliedCoupon = {
+  couponId: string
+  code: string
+  discountPct: number
+}
+
 type Props = {
   clientSecret: string
   paymentIntentId: string
+  appliedCoupon: AppliedCoupon | null // 追加
+  onCouponApply: (coupon: AppliedCoupon | null) => void // 追加
 }
 
-export const CheckoutForm = ({ clientSecret, paymentIntentId }: Props) => {
+export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onCouponApply }: Props) => {
   const router = useRouter()
   const stripeInstance = useStripe()
   const elements = useElements()
@@ -69,6 +79,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId }: Props) => {
         items: items.map(({ id, quantity }) => ({ id, quantity })),
         shippingAddress: data,
         stripePaymentIntentId: paymentIntentId,
+        ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}), // 追加
       }),
     })
 
@@ -241,6 +252,9 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId }: Props) => {
           </div>
         </div>
       </section>
+
+      {/* クーポンコード入力 */}
+      <CouponInput appliedCoupon={appliedCoupon} onApply={onCouponApply} />
 
       {/* 決済情報 */}
       <section aria-labelledby="payment-heading">

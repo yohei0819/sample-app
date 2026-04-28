@@ -26,3 +26,9 @@ export const ORDER_STATUS_CLASS: Record<string, string> = {
   DELIVERED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-red-100 text-red-800',
 }
+
+// クーポン一覧ページのページサイズ // 追加
+export const ADMIN_COUPON_PAGE_SIZE = 50
+
+// クーポンコードの最大文字数 // 追加
+export const COUPON_CODE_MAX_LENGTH = 32

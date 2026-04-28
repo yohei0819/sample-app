@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createOrder, findOrdersByUserId } from '@/lib/db/orders'
 import { validateCartItems } from '@/lib/db/products'
+import { findCouponByCode, incrementCouponUsedCountAtomic } from '@/lib/db/coupons' // 変更
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 
@@ -15,6 +16,7 @@ type RequestBody = {
   items: CartItemInput[]
   shippingAddress: ShippingAddress
   stripePaymentIntentId: string
+  couponCode?: string // 追加
 }
 
 // GET /api/orders - ログインユーザーの注文一覧取得
@@ -54,15 +56,54 @@ export const POST = async (req: NextRequest) => {
   }
 
   const { items, shippingAddress, stripePaymentIntentId } = body as RequestBody
+  const couponCode = (body as RequestBody).couponCode // 追加
 
   try {
     // 各商品の最新価格・在庫を DB から取得して検証
     const productData = await validateCartItems(items)
 
-    // 合計金額（税込10%）
+    // 合計金額（税抜小計）
     const subtotal = productData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0)
-    const tax = Math.floor(subtotal * 0.1)
-    const totalPrice = subtotal + tax
+
+    // クーポン検証・割引計算 // 追加
+    let discountAmount = 0
+    let couponId: string | undefined = undefined
+    let couponMaxUses: number | null = null // 追加（アトミック更新用）
+    if (couponCode) {
+      const coupon = await findCouponByCode(couponCode)
+      // クーポンが存在しない・無効・期限切れ・上限到達の場合は400エラー // 変更
+      if (
+        !coupon ||
+        !coupon.isActive ||
+        (coupon.expiresAt && coupon.expiresAt < new Date()) ||
+        (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses)
+      ) {
+        return NextResponse.json(
+          { error: 'クーポンが無効または使用できません', code: 'INVALID_COUPON' },
+          { status: 400 },
+        )
+      }
+      discountAmount = Math.floor(subtotal * (coupon.discountPct / 100))
+      couponId = coupon.id
+      couponMaxUses = coupon.maxUses // 追加
+    }
+
+    // 割引後小計 + 消費税（10%）
+    const discountedSubtotal = subtotal - discountAmount
+    const tax = Math.floor(discountedSubtotal * 0.1)
+    const totalPrice = discountedSubtotal + tax
+
+    // クーポン使用回数アトミック更新（createOrderより前に実施してレースコンディションを防ぐ） // 変更
+    if (couponId) {
+      const updated = await incrementCouponUsedCountAtomic(couponId, couponMaxUses)
+      if (updated === 0) {
+        // 別リクエストが先に上限に達した場合は注文を作成しない
+        return NextResponse.json(
+          { error: 'クーポンの利用上限に達しました', code: 'COUPON_LIMIT_EXCEEDED' },
+          { status: 400 },
+        )
+      }
+    }
 
     const order = await createOrder({
       status: 'PENDING',
@@ -70,6 +111,7 @@ export const POST = async (req: NextRequest) => {
       stripePaymentIntentId,
       shippingAddress: shippingAddress as unknown as Prisma.InputJsonValue,
       user: { connect: { id: session.user.id } },
+      ...(couponId ? { coupon: { connect: { id: couponId } } } : {}), // 追加
       items: {
         create: productData.map(({ product, quantity }) => ({
           quantity,

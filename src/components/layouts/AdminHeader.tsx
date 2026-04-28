@@ -49,6 +49,13 @@ export const AdminHeader = () => {
           >
             在庫管理
           </Link>
+          {/* 追加 */}
+          <Link
+            href="/admin/coupons"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            クーポン管理
+          </Link>
         </nav>
       </div>
     </header>
