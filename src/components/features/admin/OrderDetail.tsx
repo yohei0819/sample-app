@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ORDER_STATUS_CLASS, ORDER_STATUS_LABEL } from '@/constants/admin'
+import { ORDER_STATUS_TRANSITIONS } from '@/constants/orders'
 import type { Coupon, Order, OrderItem, OrderStatus, Product, User } from '@/generated/prisma/client'
 
 // 配送先住所の型定義
@@ -28,15 +29,6 @@ type Props = {
   order: OrderWithRelations
 }
 
-// 遷移可能な次のステータス一覧
-const NEXT_STATUSES: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ['PAID', 'CANCELLED'],
-  PAID: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED', 'CANCELLED'],
-  DELIVERED: [],
-  CANCELLED: [],
-}
-
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'PENDING', label: '未払い' },
   { value: 'PAID', label: '支払済' },
@@ -50,7 +42,8 @@ export const OrderDetail = ({ order }: Props) => {
   const [isUpdating, setIsUpdating] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const nextStatuses = NEXT_STATUSES[order.status] ?? []
+  // 変更: サーバー側と共通の遷移ルール定数を使用（二重定義を解消）
+  const nextStatuses = ORDER_STATUS_TRANSITIONS[order.status] ?? []
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
     const label = STATUS_OPTIONS.find((o) => o.value === newStatus)?.label ?? newStatus
@@ -60,8 +53,8 @@ export const OrderDetail = ({ order }: Props) => {
     setErrorMsg(null)
 
     try {
-      const res = await fetch(`/api/admin/orders/${order.id}`, {
-        method: 'PATCH',
+      const res = await fetch(`/api/admin/orders/${order.id}/status`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       })
