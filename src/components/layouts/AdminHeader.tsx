@@ -35,6 +35,20 @@ export const AdminHeader = () => {
           >
             注文管理
           </Link>
+          {/* 追加 */}
+          <Link
+            href="/admin/categories"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            カテゴリ管理
+          </Link>
+          {/* 追加 */}
+          <Link
+            href="/admin/inventory"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            在庫管理
+          </Link>
         </nav>
       </div>
     </header>
