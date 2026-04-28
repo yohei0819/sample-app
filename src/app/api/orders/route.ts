@@ -93,6 +93,18 @@ export const POST = async (req: NextRequest) => {
     const tax = Math.floor(discountedSubtotal * 0.1)
     const totalPrice = discountedSubtotal + tax
 
+    // クーポン使用回数アトミック更新（createOrderより前に実施してレースコンディションを防ぐ） // 変更
+    if (couponId) {
+      const updated = await incrementCouponUsedCountAtomic(couponId, couponMaxUses)
+      if (updated === 0) {
+        // 別リクエストが先に上限に達した場合は注文を作成しない
+        return NextResponse.json(
+          { error: 'クーポンの利用上限に達しました', code: 'COUPON_LIMIT_EXCEEDED' },
+          { status: 400 },
+        )
+      }
+    }
+
     const order = await createOrder({
       status: 'PENDING',
       totalPrice,
@@ -108,18 +120,6 @@ export const POST = async (req: NextRequest) => {
         })),
       },
     })
-
-    // クーポン使用回数アトミック更新 // 変更
-    if (couponId) {
-      const updated = await incrementCouponUsedCountAtomic(couponId, couponMaxUses)
-      if (updated === 0) {
-        // 別リクエストが先に上限に達した場合
-        return NextResponse.json(
-          { error: 'クーポンの利用上限に達しました', code: 'COUPON_LIMIT_EXCEEDED' },
-          { status: 400 },
-        )
-      }
-    }
 
     return NextResponse.json({ orderId: order.id }, { status: 201 })
   } catch (err) {

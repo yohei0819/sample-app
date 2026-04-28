@@ -3,13 +3,14 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { CouponTable } from '@/components/features/admin/CouponTable'
 import { findAllCoupons } from '@/lib/db/coupons'
+import { ADMIN_COUPON_PAGE_SIZE } from '@/constants/admin' // 追加
 
 export const metadata = {
   title: 'クーポン管理 | 管理画面',
 }
 
 export default async function AdminCouponsPage() {
-  const coupons = await findAllCoupons()
+  const coupons = await findAllCoupons(ADMIN_COUPON_PAGE_SIZE) // 変更
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">

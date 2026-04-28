@@ -2,10 +2,11 @@ import { prisma } from '@/lib/db/prisma'
 import type { Prisma } from '@/generated/prisma/client'
 
 // クーポン一覧取得（管理画面用）
-export const findAllCoupons = async () => {
+export const findAllCoupons = async (take?: number) => {
   return prisma.coupon.findMany({
     orderBy: { createdAt: 'desc' },
     include: { _count: { select: { orders: true } } },
+    ...(take !== undefined ? { take } : {}),
   })
 }
 
@@ -27,14 +28,6 @@ export const createCoupon = async (data: Prisma.CouponCreateInput) => {
 // クーポン更新（管理画面用）
 export const updateCoupon = async (id: string, data: Prisma.CouponUpdateInput) => {
   return prisma.coupon.update({ where: { id }, data })
-}
-
-// クーポン使用回数+1（注文確定時）
-export const incrementCouponUsedCount = async (id: string) => {
-  return prisma.coupon.update({
-    where: { id },
-    data: { usedCount: { increment: 1 } },
-  })
 }
 
 // クーポン使用回数アトミック更新（レースコンディション対策） // 追加
