@@ -56,6 +56,13 @@ export const AdminHeader = () => {
           >
             クーポン管理
           </Link>
+          {/* 追加: ユーザー管理 */}
+          <Link
+            href="/admin/users"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            ユーザー管理
+          </Link>
         </nav>
       </div>
     </header>

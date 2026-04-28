@@ -32,6 +32,7 @@ model User {
   name         String?
   passwordHash String?
   role         Role     @default(USER)
+  isActive     Boolean  @default(true) // 追加: 有効/無効フラグ
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

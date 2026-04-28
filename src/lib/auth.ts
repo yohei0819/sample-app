@@ -51,6 +51,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await findUserByEmail(credentials.email)
         if (!user?.passwordHash) return null
 
+        // 追加: 無効化されたユーザーはログイン不可
+        if (user.isActive === false) return null
+
         // パスワード照合（bcryptjs）
         const isValid = await bcrypt.compare(credentials.password, user.passwordHash)
         if (!isValid) return null
