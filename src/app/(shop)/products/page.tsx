@@ -2,8 +2,10 @@
 import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import type { Prisma } from '@/generated/prisma/client'
+import { auth } from '@/lib/auth' // 追加
 import { findProducts } from '@/lib/db/products'
 import { findAllCategories } from '@/lib/db/categories' // 変更: DB層のリポジトリ関数を使用
+import { findWishlistedProductIds } from '@/lib/db/wishlist' // 追加
 import { ProductList } from '@/components/features/product/ProductList'
 import { ProductSearch } from '@/components/features/product/ProductSearch'
 import { ProductSort } from '@/components/features/product/ProductSort'
@@ -46,10 +48,15 @@ export default async function ProductsPage({ searchParams }: Props) {
   const sort = resolveParam(searchParams.sort) ?? 'newest'
   const orderBy = SORT_ORDER_MAP[sort] ?? { createdAt: 'desc' }
 
-  // カテゴリ一覧とプロダクト一覧を並行取得（エラー時は error.tsx に伝播させる）
-  const [products, categories] = await Promise.all([
+  // 追加: セッション取得（ウィッシュリスト状態取得のため）
+  const session = await auth()
+  const userId = session?.user?.id ?? null
+
+  // カテゴリ一覧・プロダクト一覧・ウィッシュリスト状態を並行取得
+  const [products, categories, wishlistedProductIds] = await Promise.all([
     findProducts({ search, categoryId, orderBy }),
     findAllCategories(), // 変更: リポジトリ関数経由に変更
+    userId ? findWishlistedProductIds(userId) : Promise.resolve(new Set<string>()), // 追加
   ])
 
   return (
@@ -78,7 +85,11 @@ export default async function ProductsPage({ searchParams }: Props) {
       <p className="mb-4 text-sm text-gray-500">{products.length}件の商品</p>
 
       {/* 商品一覧グリッド */}
-      <ProductList products={products} />
+      <ProductList
+        products={products}
+        wishlistedProductIds={wishlistedProductIds} // 追加
+        isLoggedIn={!!userId} // 追加
+      />
     </div>
   )
 }

@@ -2,12 +2,16 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Product, Category } from '@/generated/prisma/client'
+import { WishlistButton } from '@/components/features/wishlist/WishlistButton' // 追加
 
 type Props = {
   product: Product & { category: Category | null }
+  // 追加: ウィッシュリスト状態
+  isWishlisted?: boolean
+  isLoggedIn?: boolean
 }
 
-export const ProductCard = ({ product }: Props) => {
+export const ProductCard = ({ product, isWishlisted = false, isLoggedIn = false }: Props) => {
   const imageUrl = product.images[0] ?? null
 
   return (
@@ -39,6 +43,14 @@ export const ProductCard = ({ product }: Props) => {
             </span>
           </div>
         )}
+        {/* 追加: ウィッシュリストボタン（右上に絶対配置） */}
+        <div className="absolute right-2 top-2">
+          <WishlistButton
+            productId={product.id}
+            initialIsWishlisted={isWishlisted}
+            isLoggedIn={isLoggedIn}
+          />
+        </div>
       </div>
 
       {/* 商品情報 */}

@@ -4,9 +4,12 @@ import { ProductCard } from './ProductCard'
 
 type Props = {
   products: (Product & { category: Category | null })[]
+  // 追加: ウィッシュリスト状態
+  wishlistedProductIds?: Set<string>
+  isLoggedIn?: boolean
 }
 
-export const ProductList = ({ products }: Props) => {
+export const ProductList = ({ products, wishlistedProductIds, isLoggedIn = false }: Props) => {
   if (products.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -18,7 +21,12 @@ export const ProductList = ({ products }: Props) => {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          isWishlisted={wishlistedProductIds?.has(product.id) ?? false} // 追加
+          isLoggedIn={isLoggedIn} // 追加
+        />
       ))}
     </div>
   )
