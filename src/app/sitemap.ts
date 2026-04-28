@@ -10,6 +10,9 @@ import {
   SITEMAP_MAX_PRODUCTS,
 } from '@/constants/seo'
 
+// 追加: ビルド時のDB接続を避けるため動的生成にする
+export const dynamic = 'force-dynamic'
+
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   const baseUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')
 
