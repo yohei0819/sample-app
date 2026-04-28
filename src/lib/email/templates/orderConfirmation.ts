@@ -1,5 +1,6 @@
 // 注文確認メールHTMLテンプレート
 import type { ShippingAddress } from '@/constants/checkout'
+import { escapeHtml } from '@/lib/email/utils' // 変更: 共通ユーティリティに集約
 
 // テンプレートに渡す注文情報の型
 export type OrderConfirmationOrder = {
@@ -17,15 +18,6 @@ export type OrderConfirmationItem = {
 
 // 数値を日本円表記にフォーマット
 const formatJpy = (value: number): string => `¥${value.toLocaleString('ja-JP')}`
-
-// HTMLエスケープ（XSS対策）
-const escapeHtml = (str: string): string =>
-  str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 
 // 注文確認メールのHTMLを生成する純粋関数
 export const renderOrderConfirmationHtml = (

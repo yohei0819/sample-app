@@ -1,6 +1,5 @@
 // メール送信関連の定数
-// 送信元アドレス（実際のドメインは将来環境変数化予定）
-export const EMAIL_FROM = 'noreply@example.com'
+// 変更: 送信元アドレスは src/env.ts の EMAIL_FROM を参照（ハードコード解消）
 
 // メール件名
 export const EMAIL_SUBJECTS = {

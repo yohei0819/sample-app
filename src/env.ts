@@ -22,6 +22,8 @@ const envSchema = z.object({
 
   // Resend（メール送信）
   RESEND_API_KEY: z.string().min(1),
+  // 追加: メール送信元アドレス（開発時のデフォルトは Resend のサンドボックス）
+  EMAIL_FROM: z.string().min(1).default('onboarding@resend.dev'),
 
   // アプリ設定
   NEXT_PUBLIC_APP_URL: z.string().min(1),

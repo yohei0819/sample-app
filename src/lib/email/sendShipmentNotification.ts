@@ -1,6 +1,7 @@
 import 'server-only'
 import { resend } from '@/lib/email/client'
-import { EMAIL_FROM, EMAIL_SUBJECTS } from '@/constants/email'
+import { env } from '@/env' // 変更: 送信元アドレスを環境変数から取得
+import { EMAIL_SUBJECTS } from '@/constants/email'
 import {
   renderShipmentNotificationHtml,
   type ShipmentNotificationOrder,
@@ -19,7 +20,7 @@ export const sendShipmentNotificationEmail = async (params: {
   try {
     const html = renderShipmentNotificationHtml(order)
     await resend.emails.send({
-      from: EMAIL_FROM,
+      from: env.EMAIL_FROM, // 変更: ハードコード解消
       to,
       subject: EMAIL_SUBJECTS.SHIPMENT_NOTIFICATION,
       html,

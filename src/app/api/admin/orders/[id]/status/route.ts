@@ -5,7 +5,7 @@ import { canTransitionOrderStatus } from '@/constants/orders'
 import { requireAdmin } from '@/lib/admin-auth'
 import { findOrderById, updateOrderStatusIfMatches } from '@/lib/db/orders'
 import { sendShipmentNotificationEmail } from '@/lib/email/sendShipmentNotification' // 追加
-import type { ShippingAddress } from '@/constants/checkout' // 追加
+import { shippingAddressSchema } from '@/lib/validators/order' // 変更: ダブルキャスト解消のため Zod パースを使用
 
 type RouteParams = {
   params: Promise<{ id: string }>
@@ -78,13 +78,19 @@ export const PUT = async (req: NextRequest, { params }: RouteParams) => {
 
     // 追加: SHIPPED へ変更された場合は発送通知メールを送信（失敗してもステータス変更は成功扱い）
     if (status === 'SHIPPED' && updated?.user?.email && updated.shippingAddress) {
-      await sendShipmentNotificationEmail({
-        to: updated.user.email,
-        order: {
-          id: updated.id,
-          shippingAddress: updated.shippingAddress as unknown as ShippingAddress,
-        },
-      })
+      // 変更: ダブルキャストではなく Zod でパースして型安全に扱う
+      const addressParsed = shippingAddressSchema.safeParse(updated.shippingAddress)
+      if (addressParsed.success) {
+        await sendShipmentNotificationEmail({
+          to: updated.user.email,
+          order: {
+            id: updated.id,
+            shippingAddress: addressParsed.data,
+          },
+        })
+      } else {
+        console.error('[admin/orders/:id/status PUT] shippingAddress パース失敗。メール送信をスキップ:', addressParsed.error.flatten())
+      }
     }
 
     return NextResponse.json({ order: updated })

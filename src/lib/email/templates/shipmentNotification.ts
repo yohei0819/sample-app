@@ -1,20 +1,12 @@
 // 発送通知メールHTMLテンプレート
 import type { ShippingAddress } from '@/constants/checkout'
+import { escapeHtml } from '@/lib/email/utils' // 変更: 共通ユーティリティに集約
 
 // テンプレートに渡す注文情報の型
 export type ShipmentNotificationOrder = {
   id: string
   shippingAddress: ShippingAddress
 }
-
-// HTMLエスケープ（XSS対策）
-const escapeHtml = (str: string): string =>
-  str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 
 // 発送通知メールのHTMLを生成する純粋関数
 export const renderShipmentNotificationHtml = (order: ShipmentNotificationOrder): string => {
