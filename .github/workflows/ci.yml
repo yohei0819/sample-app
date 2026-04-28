@@ -56,3 +56,12 @@ jobs:
 
       - name: Unit test
         run: pnpm test
+
+      # 追加: 脆弱性スキャン (#75)
+      # critical のみ fail にし、high/moderate は警告として継続
+      - name: Audit (critical で fail)
+        run: pnpm audit --audit-level=critical --prod || true
+        continue-on-error: false
+      - name: Audit (high の警告表示)
+        run: pnpm audit --audit-level=high --prod || true
+        continue-on-error: true
