@@ -28,6 +28,12 @@ const envSchema = z.object({
   // アプリ設定
   NEXT_PUBLIC_APP_URL: z.string().min(1),
   NODE_ENV: z.enum(['development', 'test', 'production']).optional().default('development'),
+
+  // 追加: Sentry（オプショナル）
+  // DSN未設定時は Sentry を初期化しない
+  NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
+  SENTRY_ENVIRONMENT: z.string().optional(),
 })
 
 // 環境変数をパース・バリデーション
