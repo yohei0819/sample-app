@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // 追加: Playwright E2E テストは Vitest の対象外（Playwright Runner で実行）
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'e2e/**'],
   },
   resolve: {
     alias: {
