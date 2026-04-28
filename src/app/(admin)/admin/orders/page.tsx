@@ -38,9 +38,19 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">注文管理</h1>
-        <p className="text-sm text-muted-foreground">注文の一覧・詳細確認・ステータス変更</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">注文管理</h1>
+          <p className="text-sm text-muted-foreground">注文の一覧・詳細確認・ステータス変更</p>
+        </div>
+        {/* 追加: CSV エクスポートボタン (#74) */}
+        <a
+          href="/api/admin/export/orders"
+          className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent"
+          aria-label="注文一覧を CSV ダウンロード"
+        >
+          CSV ダウンロード
+        </a>
       </div>
 
       <Suspense fallback={<p className="text-sm text-muted-foreground">読み込み中...</p>}>

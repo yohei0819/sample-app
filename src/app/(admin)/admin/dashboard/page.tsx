@@ -15,9 +15,28 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">ダッシュボード</h1>
-        <p className="text-sm text-muted-foreground">売上・注文の概要</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">ダッシュボード</h1>
+          <p className="text-sm text-muted-foreground">売上・注文の概要</p>
+        </div>
+        {/* 追加: 売上サマリ CSV ダウンロード (#74) */}
+        <div className="flex gap-2">
+          <a
+            href="/api/admin/export/sales?granularity=daily"
+            className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent"
+            aria-label="売上サマリ（日次）を CSV ダウンロード"
+          >
+            日次CSV
+          </a>
+          <a
+            href="/api/admin/export/sales?granularity=monthly"
+            className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent"
+            aria-label="売上サマリ（月次）を CSV ダウンロード"
+          >
+            月次CSV
+          </a>
+        </div>
       </div>
 
       {/* 統計カード */}
