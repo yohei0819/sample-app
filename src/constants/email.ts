@@ -5,4 +5,5 @@
 export const EMAIL_SUBJECTS = {
   ORDER_CONFIRMATION: 'ご注文ありがとうございます',
   SHIPMENT_NOTIFICATION: '商品を発送しました',
+  BACK_IN_STOCK: '商品が再入荷しました', // 追加: バックインストック通知
 } as const
