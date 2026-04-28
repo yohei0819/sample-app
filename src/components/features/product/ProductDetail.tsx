@@ -2,6 +2,7 @@
 import Image from 'next/image'
 import type { findProductById } from '@/lib/db/products'
 import { AddToCartButton } from './AddToCartButton'
+import { BackInStockForm } from './BackInStockForm' // 追加: バックインストック通知フォーム
 import { WishlistButton } from '@/components/features/wishlist/WishlistButton' // 追加
 
 // 変更: ReturnTypeベースの型定義でスキーマ変更に対応
@@ -92,6 +93,13 @@ export const ProductDetail = ({ product, wishlistProps }: Props) => {
               isLoggedIn={wishlistProps.isLoggedIn}
             />
           </div>
+
+          {/* 追加: 在庫切れ時のみバックインストック通知購読フォームを表示 */}
+          {product.stock === 0 && (
+            <div className="pt-2">
+              <BackInStockForm productId={product.id} />
+            </div>
+          )}
         </div>
       </div>
     </div>
