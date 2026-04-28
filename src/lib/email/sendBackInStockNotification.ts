@@ -34,12 +34,17 @@ export const sendBackInStockNotificationEmail = async (params: {
     let html = tpl.bodyHtml
 
     if (tpl.isCustom) {
-      const vars = {
+      // 変更: 件名は生値、本文はエスケープ値を埋め込む
+      const rawVars = {
+        productName: product.name,
+        productUrl: productUrl,
+      }
+      const htmlVars = {
         productName: escapeHtml(product.name),
         productUrl: escapeHtml(productUrl),
       }
-      subject = applyTemplateVariables(tpl.subject, vars)
-      html = applyTemplateVariables(tpl.bodyHtml, vars)
+      subject = applyTemplateVariables(tpl.subject, rawVars)
+      html = applyTemplateVariables(tpl.bodyHtml, htmlVars)
     }
 
     await resend.emails.send({

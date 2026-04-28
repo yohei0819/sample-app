@@ -35,13 +35,19 @@ export const sendShipmentNotificationEmail = async (params: {
     let html = tpl.bodyHtml
 
     if (tpl.isCustom) {
-      const vars = {
+      // 変更: 件名は生値、本文はエスケープ値を埋め込む
+      const rawVars = {
+        orderNumber: order.id,
+        customerName: order.shippingAddress.name,
+        trackingNumber: trackingNumber ?? '',
+      }
+      const htmlVars = {
         orderNumber: escapeHtml(order.id),
         customerName: escapeHtml(order.shippingAddress.name),
         trackingNumber: trackingNumber ? escapeHtml(trackingNumber) : '',
       }
-      subject = applyTemplateVariables(tpl.subject, vars)
-      html = applyTemplateVariables(tpl.bodyHtml, vars)
+      subject = applyTemplateVariables(tpl.subject, rawVars)
+      html = applyTemplateVariables(tpl.bodyHtml, htmlVars)
     }
 
     await resend.emails.send({

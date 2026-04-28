@@ -3,11 +3,11 @@ import Link from 'next/link'
 import { Pencil } from 'lucide-react'
 import { findAllEmailTemplates } from '@/lib/db/emailTemplates'
 import {
-  EMAIL_SUBJECTS,
   EMAIL_TEMPLATE_KEYS,
   EMAIL_TEMPLATE_LABELS,
   type EmailTemplateKeyValue,
 } from '@/constants/email'
+import { EMAIL_FALLBACK_SUBJECTS } from '@/lib/email/fallbacks' // 追加: 雛形を一元化
 
 export const metadata = {
   title: 'メールテンプレート管理 | 管理画面',
@@ -19,13 +19,6 @@ const ALL_KEYS: readonly EmailTemplateKeyValue[] = [
   EMAIL_TEMPLATE_KEYS.SHIPMENT_NOTIFICATION,
   EMAIL_TEMPLATE_KEYS.BACK_IN_STOCK,
 ]
-
-// フォールバックの件名（DB未登録時に表示）
-const FALLBACK_SUBJECTS: Record<EmailTemplateKeyValue, string> = {
-  ORDER_CONFIRMATION: EMAIL_SUBJECTS.ORDER_CONFIRMATION,
-  SHIPMENT_NOTIFICATION: EMAIL_SUBJECTS.SHIPMENT_NOTIFICATION,
-  BACK_IN_STOCK: EMAIL_SUBJECTS.BACK_IN_STOCK,
-}
 
 export default async function AdminEmailTemplatesPage() {
   const stored = await findAllEmailTemplates()
@@ -54,7 +47,7 @@ export default async function AdminEmailTemplatesPage() {
           <tbody className="divide-y">
             {ALL_KEYS.map((key) => {
               const stored = map.get(key)
-              const subject = stored?.subject ?? FALLBACK_SUBJECTS[key]
+              const subject = stored?.subject ?? EMAIL_FALLBACK_SUBJECTS[key]
               return (
                 <tr key={key}>
                   <td className="px-4 py-3 font-medium">{EMAIL_TEMPLATE_LABELS[key]}</td>

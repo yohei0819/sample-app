@@ -37,16 +37,25 @@ export const sendOrderConfirmationEmail = async (params: {
     let html = tpl.bodyHtml
 
     if (tpl.isCustom) {
-      // カスタムテンプレートに変数を埋め込む（顧客入力値はescapeHtmlで安全化）
-      const vars = {
+      // 変更: 件名はプレーンテキストのため生値、本文はHTMLのためエスケープ値を埋め込む
+      const totalAmount = formatOrderJpy(order.totalPrice)
+      // 件名用（生値）
+      const rawVars = {
+        orderNumber: order.id,
+        customerName: order.shippingAddress.name,
+        totalAmount,
+        // 件名にitemsHtmlを埋め込むことは想定しないが、誤って含めても安全な空文字を渡す
+        itemsHtml: '',
+      }
+      // 本文用（顧客入力値はescapeHtmlで安全化、itemsHtmlは内部生成済みHTML）
+      const htmlVars = {
         orderNumber: escapeHtml(order.id),
         customerName: escapeHtml(order.shippingAddress.name),
-        totalAmount: formatOrderJpy(order.totalPrice),
-        // itemsHtml は内部生成のためエスケープ済みtr群（HTML埋め込みを許容）
+        totalAmount,
         itemsHtml: renderOrderConfirmationItemsHtml(items),
       }
-      subject = applyTemplateVariables(tpl.subject, vars)
-      html = applyTemplateVariables(tpl.bodyHtml, vars)
+      subject = applyTemplateVariables(tpl.subject, rawVars)
+      html = applyTemplateVariables(tpl.bodyHtml, htmlVars)
     }
 
     await resend.emails.send({
