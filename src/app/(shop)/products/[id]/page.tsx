@@ -12,6 +12,7 @@ import { ReviewForm } from '@/components/features/review/ReviewForm'
 import { ReviewList } from '@/components/features/review/ReviewList'
 import { env } from '@/env' // 追加: 構造化データ用URL生成
 import { SITE_NAME, TWITTER_CARD_TYPE } from '@/constants/seo' // 追加
+import { safeJsonLd } from '@/lib/seo/jsonLd' // 追加: JSON-LD XSS対策
 
 // 追加: React.cacheでラップして1リクエスト内のDBクエリ重複を解消
 const getCachedProductById = cache(findProductById)
@@ -89,7 +90,8 @@ export default async function ProductDetailPage({ params }: Props) {
       {/* 追加: 商品の構造化データ（JSON-LD） */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+        // 変更: safeJsonLd で '<' をエスケープし XSS / </script> 離脱を防止
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(productJsonLd) }}
       />
       <ProductDetail
         product={product}

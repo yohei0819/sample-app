@@ -11,6 +11,7 @@ import {
   TWITTER_CARD_TYPE,
   ORGANIZATION_NAME,
 } from '@/constants/seo' // 追加
+import { safeJsonLd } from '@/lib/seo/jsonLd' // 追加: JSON-LD XSS対策
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -69,8 +70,8 @@ export default function RootLayout({
         {/* 追加: Organization 構造化データ（JSON-LD） */}
         <script
           type="application/ld+json"
-          // JSON.stringify でエスケープされるためXSS安全
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          // 変更: safeJsonLd で '<' をエスケープし XSS / </script> 離脱を防止
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
         />
         {/* 追加: NextAuth v5 SessionProvider でラップ */}
         <AuthSessionProvider>

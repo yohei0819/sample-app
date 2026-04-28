@@ -7,6 +7,7 @@ import {
   STATIC_SITEMAP_PATHS,
   SITEMAP_CHANGE_FREQ,
   SITEMAP_PRIORITY,
+  SITEMAP_MAX_PRODUCTS,
 } from '@/constants/seo'
 
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
@@ -31,10 +32,12 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
   }))
 
   // 公開中の商品詳細ページ（DB直アクセスでパフォーマンス重視）
+  // 変更: sitemap が肥大化しないよう take で件数を制限し、新しいものから優先
   const products = await prisma.product.findMany({
     where: { isPublished: true },
     select: { id: true, updatedAt: true },
     orderBy: { updatedAt: 'desc' },
+    take: SITEMAP_MAX_PRODUCTS,
   })
 
   const productEntries: MetadataRoute.Sitemap = products.map((p) => ({

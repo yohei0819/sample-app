@@ -2,7 +2,9 @@
 export const SITE_NAME = 'SampleShop'
 export const SITE_DESCRIPTION = '上質なアイテムをお届けするオンラインショップ'
 export const SITE_LOCALE = 'ja_JP'
-export const DEFAULT_OG_IMAGE = '/og-default.png' // public配下のデフォルトOG画像（未配置でも参照のみで問題なし）
+// TODO: public/og-default.png を後日配置する。
+// 未配置の場合 OG 画像取得時に 404 となるため、本番デプロイ前に必ず画像を配置すること。
+export const DEFAULT_OG_IMAGE = '/og-default.png'
 export const TWITTER_CARD_TYPE = 'summary_large_image' as const
 export const ORGANIZATION_NAME = SITE_NAME
 
@@ -39,3 +41,6 @@ export const SITEMAP_PRIORITY = {
   PRODUCT_DETAIL: 0.8,
   STATIC: 0.5,
 } as const
+
+// sitemap に含める商品の最大件数（Google の sitemap.xml 上限 50,000 件を踏まえた安全値）
+export const SITEMAP_MAX_PRODUCTS = 10000
