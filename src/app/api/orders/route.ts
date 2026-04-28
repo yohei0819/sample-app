@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createOrder, findOrdersByUserId } from '@/lib/db/orders'
 import { validateCartItems } from '@/lib/db/products'
+import { findCouponByCode, incrementCouponUsedCount } from '@/lib/db/coupons' // 追加
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 
@@ -15,6 +16,7 @@ type RequestBody = {
   items: CartItemInput[]
   shippingAddress: ShippingAddress
   stripePaymentIntentId: string
+  couponCode?: string // 追加
 }
 
 // GET /api/orders - ログインユーザーの注文一覧取得
@@ -54,15 +56,35 @@ export const POST = async (req: NextRequest) => {
   }
 
   const { items, shippingAddress, stripePaymentIntentId } = body as RequestBody
+  const couponCode = (body as RequestBody).couponCode // 追加
 
   try {
     // 各商品の最新価格・在庫を DB から取得して検証
     const productData = await validateCartItems(items)
 
-    // 合計金額（税込10%）
+    // 合計金額（税抜小計）
     const subtotal = productData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0)
-    const tax = Math.floor(subtotal * 0.1)
-    const totalPrice = subtotal + tax
+
+    // クーポン検証・割引計算 // 追加
+    let discountAmount = 0
+    let couponId: string | undefined = undefined
+    if (couponCode) {
+      const coupon = await findCouponByCode(couponCode)
+      if (
+        coupon &&
+        coupon.isActive &&
+        (!coupon.expiresAt || coupon.expiresAt >= new Date()) &&
+        (coupon.maxUses === null || coupon.usedCount < coupon.maxUses)
+      ) {
+        discountAmount = Math.floor(subtotal * (coupon.discountPct / 100))
+        couponId = coupon.id
+      }
+    }
+
+    // 割引後小計 + 消費税（10%）
+    const discountedSubtotal = subtotal - discountAmount
+    const tax = Math.floor(discountedSubtotal * 0.1)
+    const totalPrice = discountedSubtotal + tax
 
     const order = await createOrder({
       status: 'PENDING',
@@ -70,6 +92,7 @@ export const POST = async (req: NextRequest) => {
       stripePaymentIntentId,
       shippingAddress: shippingAddress as unknown as Prisma.InputJsonValue,
       user: { connect: { id: session.user.id } },
+      ...(couponId ? { coupon: { connect: { id: couponId } } } : {}), // 追加
       items: {
         create: productData.map(({ product, quantity }) => ({
           quantity,
@@ -78,6 +101,11 @@ export const POST = async (req: NextRequest) => {
         })),
       },
     })
+
+    // クーポン使用回数+1 // 追加
+    if (couponId) {
+      await incrementCouponUsedCount(couponId)
+    }
 
     return NextResponse.json({ orderId: order.id }, { status: 201 })
   } catch (err) {

@@ -10,6 +10,13 @@ import { useCartStore } from '@/stores/cartStore'
 // Stripe publishable key（クライアントサイド）
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
 
+// 適用済みクーポン型
+type AppliedCoupon = {
+  couponId: string
+  code: string
+  discountPct: number
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, totalPrice } = useCartStore()
@@ -17,6 +24,7 @@ export default function CheckoutPage() {
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null) // 追加
 
   useEffect(() => {
     useCartStore.persist.rehydrate()
@@ -70,9 +78,12 @@ export default function CheckoutPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted])
 
-  // 税込合計
-  const tax = Math.floor(totalPrice() * 0.1)
-  const totalWithTax = totalPrice() + tax
+  // 税込合計（クーポン割引を考慮） // 変更
+  const subtotal = totalPrice()
+  const discountAmount = appliedCoupon ? Math.floor(subtotal * (appliedCoupon.discountPct / 100)) : 0
+  const discountedSubtotal = subtotal - discountAmount
+  const tax = Math.floor(discountedSubtotal * 0.1)
+  const totalWithTax = discountedSubtotal + tax
 
   if (!mounted) return null
 
@@ -94,7 +105,12 @@ export default function CheckoutPage() {
               stripe={stripePromise}
               options={{ clientSecret, locale: 'ja' }}
             >
-              <CheckoutForm clientSecret={clientSecret} paymentIntentId={paymentIntentId} />
+              <CheckoutForm
+                clientSecret={clientSecret}
+                paymentIntentId={paymentIntentId}
+                appliedCoupon={appliedCoupon}
+                onCouponApply={setAppliedCoupon}
+              />
             </Elements>
           ) : (
             !error && (
@@ -125,8 +141,15 @@ export default function CheckoutPage() {
             <div className="space-y-1">
               <div className="flex justify-between text-muted-foreground">
                 <span>小計（税抜）</span>
-                <span>¥{totalPrice().toLocaleString()}</span>
+                <span>¥{subtotal.toLocaleString()}</span>
               </div>
+              {/* クーポン割引 // 追加 */}
+              {appliedCoupon && (
+                <div className="flex justify-between text-green-600">
+                  <span>割引（{appliedCoupon.discountPct}%）</span>
+                  <span>-¥{discountAmount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-muted-foreground">
                 <span>消費税（10%）</span>
                 <span>¥{tax.toLocaleString()}</span>
