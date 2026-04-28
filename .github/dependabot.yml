@@ -1,0 +1,41 @@
+# Dependabot 設定
+# npm (pnpm) と GitHub Actions の依存を週次で自動更新する
+version: 2
+updates:
+  # アプリケーションの npm 依存
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    labels:
+      - dependencies
+    commit-message:
+      prefix: chore(deps)
+      include: scope
+    groups:
+      # patch / minor をまとめて 1 PR にする（major は単独PR）
+      minor-and-patch:
+        update-types:
+          - patch
+          - minor
+
+  # GitHub Actions ワークフロー
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: chore(actions)
+      include: scope
