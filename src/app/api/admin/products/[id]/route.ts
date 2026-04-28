@@ -26,14 +26,15 @@ export const PUT = async (
       return NextResponse.json({ error: '入力内容に誤りがあります', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, price, stock, categoryId, isPublished } = parsed.data
+    const { name, description, price, stock, categoryId, isPublished, images } = parsed.data
     const product = await updateProduct(params.id, {
       name,
       description,
       price,
       stock,
       isPublished,
-      // TODO: 画像アップロード対応（Cloudinary or Vercel Blob）は未実装
+      // 変更: 画像URL配列を更新（Cloudinaryアップロード後のURLを受け取る）
+      images,
       ...(categoryId !== undefined
         ? { category: categoryId ? { connect: { id: categoryId } } : { disconnect: true } }
         : {}),
