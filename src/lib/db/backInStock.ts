@@ -27,10 +27,3 @@ export const markAsNotified = async (ids: string[]) => {
     data: { notified: true, notifiedAt: new Date() },
   })
 }
-
-// 通知待ち件数（管理画面用）
-export const findActiveSubscriptionsCount = async (productId: string): Promise<number> => {
-  return prisma.backInStockSubscription.count({
-    where: { productId, notified: false },
-  })
-}

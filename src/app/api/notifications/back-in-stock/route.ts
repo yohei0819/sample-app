@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db/prisma'
 import { createSubscription } from '@/lib/db/backInStock'
 import { subscribeSchema } from '@/lib/validators/backInStock'
+import { checkRateLimit } from '@/lib/rateLimit'
+import {
+  BACK_IN_STOCK_RATE_LIMIT,
+  BACK_IN_STOCK_RATE_WINDOW_MS,
+} from '@/constants/notifications'
 
 // POST /api/notifications/back-in-stock - 在庫切れ商品の再入荷通知購読
 export const POST = async (req: NextRequest) => {
@@ -29,6 +34,19 @@ export const POST = async (req: NextRequest) => {
   }
 
   const { email, productId } = parsed.data
+
+  // 追加: 簡易レート制限（同一IP×同一productId / 1分10回）
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const rateKey = `backinstock:${ip}:${productId}`
+  if (
+    !checkRateLimit(rateKey, BACK_IN_STOCK_RATE_LIMIT, BACK_IN_STOCK_RATE_WINDOW_MS)
+  ) {
+    return NextResponse.json(
+      { error: 'リクエストが多すぎます', code: 'RATE_LIMITED' },
+      { status: 429 },
+    )
+  }
 
   try {
     // 商品の存在確認 + 在庫切れチェック

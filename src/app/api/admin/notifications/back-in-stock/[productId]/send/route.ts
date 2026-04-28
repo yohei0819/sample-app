@@ -34,13 +34,21 @@ export const POST = async (_req: Request, context: RouteContext) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: productId },
-      select: { id: true, name: true, images: true },
+      select: { id: true, name: true, images: true, stock: true }, // 変更: 在庫再確認のため stock を取得
     })
 
     if (!product) {
       return NextResponse.json(
         { error: '商品が見つかりません', code: 'NOT_FOUND' },
         { status: 404 },
+      )
+    }
+
+    // 追加: 在庫切れの商品には誤送信を防ぐため通知しない
+    if (product.stock <= 0) {
+      return NextResponse.json(
+        { error: '商品が在庫切れです', code: 'OUT_OF_STOCK' },
+        { status: 409 },
       )
     }
 

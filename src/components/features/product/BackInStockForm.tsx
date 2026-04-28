@@ -70,6 +70,8 @@ export const BackInStockForm = ({ productId }: Props) => {
         </p>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+          {/* 追加: productIdをhidden inputとして明示的に送信 */}
+          <input type="hidden" {...register('productId')} />
           <div>
             <Label htmlFor="back-in-stock-email" className="sr-only">
               メールアドレス
