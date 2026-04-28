@@ -44,3 +44,9 @@ src/generated/
 tests/evidence/
 
 /src/generated/prisma
+
+# Playwright
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
