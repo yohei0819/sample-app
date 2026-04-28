@@ -14,18 +14,3 @@ export const categorySchema = z.object({
 })
 
 export type CategoryFormValues = z.infer<typeof categorySchema>
-
-// 在庫更新スキーマ
-export const inventoryUpdateSchema = z.object({
-  items: z.array(
-    z.object({
-      id: z.string().min(1, '商品IDは必須です'),
-      stock: z
-        .number()
-        .int('在庫数は整数で入力してください')
-        .min(0, '在庫数は0以上で入力してください'),
-    })
-  ),
-})
-
-export type InventoryUpdateValues = z.infer<typeof inventoryUpdateSchema>

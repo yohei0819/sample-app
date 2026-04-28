@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { findCategoryById, updateCategory, deleteCategory } from '@/lib/db/categories'
+import { PrismaClientKnownRequestError } from '@/generated/prisma/internal/prismaNamespace'
 import { categorySchema } from '@/lib/validators/category'
 
 type Params = { params: Promise<{ id: string }> }
@@ -33,6 +34,13 @@ export const PUT = async (req: NextRequest, { params }: Params) => {
     const category = await updateCategory(id, parsed.data)
     return NextResponse.json({ category })
   } catch (err) {
+    // 修正: slug ユニーク制約違反（P2002）を 409 で返す
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'このスラッグは既に使用されています', code: 'CONFLICT' },
+        { status: 409 }
+      )
+    }
     console.error('[admin/categories PUT] エラー:', err)
     return NextResponse.json(
       { error: 'カテゴリの更新に失敗しました', code: 'INTERNAL_SERVER_ERROR' },

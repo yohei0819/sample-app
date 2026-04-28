@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { findAllProductsForAdmin, updateProduct } from '@/lib/db/products'
-import { inventoryUpdateSchema } from '@/lib/validators/category'
+import { inventoryUpdateSchema } from '@/lib/validators/product'
 
 // GET /api/admin/inventory - 在庫一覧取得
 export const GET = async () => {
