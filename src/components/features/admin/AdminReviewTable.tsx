@@ -36,18 +36,28 @@ export const AdminReviewTable = ({ reviews, total, currentPage, currentFilter }:
     router.push(buildUrl(1, filter))
   }
 
+  // 変更: APIエラー時にユーザーへフィードバックを表示する
   const handleToggleVisibility = async (id: string, current: boolean) => {
-    await fetch(`/api/admin/reviews/${id}`, {
+    const res = await fetch(`/api/admin/reviews/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isPublic: !current }),
     })
+    if (!res.ok) {
+      window.alert('更新に失敗しました。再度お試しください。')
+      return
+    }
     router.refresh()
   }
 
+  // 変更: APIエラー時にユーザーへフィードバックを表示する
   const handleDelete = async (id: string) => {
     if (!window.confirm('このレビューを削除しますか？')) return
-    await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      window.alert('削除に失敗しました。再度お試しください。')
+      return
+    }
     router.refresh()
   }
 

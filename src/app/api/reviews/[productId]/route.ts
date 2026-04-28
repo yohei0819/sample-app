@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
+import { PrismaClientKnownRequestError } from '@/generated/prisma/internal/prismaNamespace'
 import {
   countPublicReviewsByProductId,
   createReview,
@@ -88,6 +89,13 @@ export const POST = async (
     })
     return NextResponse.json({ review }, { status: 201 })
   } catch (err) {
+    // 変更: 同時投稿によるユニーク制約違反（P2002）を 409 で返す
+    if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'すでにレビューを投稿済みです', code: 'ALREADY_EXISTS' },
+        { status: 409 },
+      )
+    }
     console.error('[reviews POST] エラー:', err)
     return NextResponse.json(
       { error: 'レビューの投稿に失敗しました', code: 'INTERNAL_SERVER_ERROR' },

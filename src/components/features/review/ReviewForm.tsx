@@ -1,6 +1,7 @@
 'use client'
 // レビュー投稿フォーム（Client Component）
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -45,9 +46,10 @@ export const ReviewForm = ({ productId, isLoggedIn, hasReviewed }: Props) => {
     return (
       <p className="text-sm text-muted-foreground">
         レビューを投稿するには
-        <a href="/login" className="underline text-primary ml-1">
+        {/* 変更: <a> → <Link> でクライアントサイドルーティングに統一 */}
+        <Link href="/login" className="underline text-primary ml-1">
           ログイン
-        </a>
+        </Link>
         してください。
       </p>
     )
@@ -91,7 +93,8 @@ export const ReviewForm = ({ productId, isLoggedIn, hasReviewed }: Props) => {
 
       {/* 星評価 */}
       <div className="space-y-1">
-        <Label htmlFor="rating-group">評価 <span aria-hidden="true" className="text-destructive">*</span></Label>
+        {/* 変更: htmlFor に対応する id がないため span に変更 */}
+        <span className="text-sm font-medium leading-none">評価 <span aria-hidden="true" className="text-destructive">*</span></span>
         <Controller
           name="rating"
           control={control}
