@@ -39,7 +39,11 @@ export default function CheckoutPage() {
       return
     }
 
-    // PaymentIntent を作成して clientSecret を取得
+    // PaymentIntent を(再)作成して clientSecret を取得
+    // appliedCoupon が変化するたびに割引後金額で再作成する // 変更
+    setClientSecret(null)
+    setPaymentIntentId(null)
+
     const createPaymentIntent = async () => {
       try {
         const res = await fetch('/api/stripe/payment-intent', {
@@ -47,6 +51,7 @@ export default function CheckoutPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             items: items.map(({ id, quantity }) => ({ id, quantity })),
+            ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}), // 追加
           }),
         })
 
@@ -76,7 +81,7 @@ export default function CheckoutPage() {
 
     void createPaymentIntent()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted])
+  }, [mounted, appliedCoupon])
 
   // 税込合計（クーポン割引を考慮） // 変更
   const subtotal = totalPrice()

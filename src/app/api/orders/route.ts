@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createOrder, findOrdersByUserId } from '@/lib/db/orders'
 import { validateCartItems } from '@/lib/db/products'
-import { findCouponByCode, incrementCouponUsedCount } from '@/lib/db/coupons' // 追加
+import { findCouponByCode, incrementCouponUsedCountAtomic } from '@/lib/db/coupons' // 変更
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 
@@ -68,17 +68,24 @@ export const POST = async (req: NextRequest) => {
     // クーポン検証・割引計算 // 追加
     let discountAmount = 0
     let couponId: string | undefined = undefined
+    let couponMaxUses: number | null = null // 追加（アトミック更新用）
     if (couponCode) {
       const coupon = await findCouponByCode(couponCode)
+      // クーポンが存在しない・無効・期限切れ・上限到達の場合は400エラー // 変更
       if (
-        coupon &&
-        coupon.isActive &&
-        (!coupon.expiresAt || coupon.expiresAt >= new Date()) &&
-        (coupon.maxUses === null || coupon.usedCount < coupon.maxUses)
+        !coupon ||
+        !coupon.isActive ||
+        (coupon.expiresAt && coupon.expiresAt < new Date()) ||
+        (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses)
       ) {
-        discountAmount = Math.floor(subtotal * (coupon.discountPct / 100))
-        couponId = coupon.id
+        return NextResponse.json(
+          { error: 'クーポンが無効または使用できません', code: 'INVALID_COUPON' },
+          { status: 400 },
+        )
       }
+      discountAmount = Math.floor(subtotal * (coupon.discountPct / 100))
+      couponId = coupon.id
+      couponMaxUses = coupon.maxUses // 追加
     }
 
     // 割引後小計 + 消費税（10%）
@@ -102,9 +109,16 @@ export const POST = async (req: NextRequest) => {
       },
     })
 
-    // クーポン使用回数+1 // 追加
+    // クーポン使用回数アトミック更新 // 変更
     if (couponId) {
-      await incrementCouponUsedCount(couponId)
+      const updated = await incrementCouponUsedCountAtomic(couponId, couponMaxUses)
+      if (updated === 0) {
+        // 別リクエストが先に上限に達した場合
+        return NextResponse.json(
+          { error: 'クーポンの利用上限に達しました', code: 'COUPON_LIMIT_EXCEEDED' },
+          { status: 400 },
+        )
+      }
     }
 
     return NextResponse.json({ orderId: order.id }, { status: 201 })

@@ -36,3 +36,30 @@ export const incrementCouponUsedCount = async (id: string) => {
     data: { usedCount: { increment: 1 } },
   })
 }
+
+// クーポン使用回数アトミック更新（レースコンディション対策） // 追加
+// 更新できた行数（1 = 成功、0 = 上限到達済み）を返す
+export const incrementCouponUsedCountAtomic = async (
+  couponId: string,
+  maxUses: number | null,
+): Promise<number> => {
+  const result = await prisma.coupon.updateMany({
+    where: {
+      id: couponId,
+      OR: [
+        { maxUses: null },
+        ...(maxUses !== null ? [{ usedCount: { lt: maxUses } }] : []),
+      ],
+    },
+    data: { usedCount: { increment: 1 } },
+  })
+  return result.count
+}
+
+// クーポン削除（注文のcouponIdをnullにしてからトランザクションで削除） // 追加
+export const deleteCouponWithOrderCleanup = async (id: string) => {
+  return prisma.$transaction([
+    prisma.order.updateMany({ where: { couponId: id }, data: { couponId: null } }),
+    prisma.coupon.delete({ where: { id } }),
+  ])
+}

@@ -1,7 +1,7 @@
 // 管理画面 クーポン更新・削除 API
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
-import { findCouponById, updateCoupon } from '@/lib/db/coupons'
+import { findCouponById, updateCoupon, deleteCouponWithOrderCleanup } from '@/lib/db/coupons' // 変更
 import { couponSchema } from '@/lib/validators/coupon'
 
 type RouteParams = { params: Promise<{ id: string }> }
@@ -66,10 +66,8 @@ export const DELETE = async (_req: NextRequest, { params }: RouteParams) => {
   }
 
   try {
-    // 注文との関連解除（ordersのcouponIdをnullに）してから削除
-    const { prisma } = await import('@/lib/db/prisma')
-    await prisma.order.updateMany({ where: { couponId: id }, data: { couponId: null } })
-    await prisma.coupon.delete({ where: { id } })
+    // トランザクションで注文との関連解除とクーポン削除を一括実行 // 変更
+    await deleteCouponWithOrderCleanup(id)
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[admin/coupons/[id] DELETE] エラー:', err)

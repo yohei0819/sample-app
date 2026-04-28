@@ -2,6 +2,7 @@
 // チェックアウト画面 クーポンコード入力コンポーネント
 import { useState } from 'react'
 import { Tag, X } from 'lucide-react'
+import { COUPON_CODE_MAX_LENGTH } from '@/constants/admin' // 追加
 
 type ValidatedCoupon = {
   couponId: string
@@ -99,7 +100,7 @@ export const CouponInput = ({ onApply, appliedCoupon }: Props) => {
           placeholder="例：SUMMER20"
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           aria-describedby={error ? 'coupon-error' : undefined}
-          maxLength={32}
+          maxLength={COUPON_CODE_MAX_LENGTH} // 変更
         />
         <button
           type="button"
