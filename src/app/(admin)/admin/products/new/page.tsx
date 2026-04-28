@@ -4,6 +4,9 @@ import { ChevronLeft } from 'lucide-react'
 import { ProductForm } from '@/components/features/admin/ProductForm'
 import { findAllCategories } from '@/lib/db/categories'
 
+// 追加: 管理画面はDB必須のため動的レンダリングを強制
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: '商品新規作成 | 管理画面',
 }
