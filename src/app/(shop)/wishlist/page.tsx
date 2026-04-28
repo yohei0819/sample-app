@@ -1,5 +1,6 @@
 // ウィッシュリスト一覧ページ（Server Component）
 import { redirect } from 'next/navigation'
+import Link from 'next/link' // 追加
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { findWishlistByUserId } from '@/lib/db/wishlist'
@@ -26,12 +27,13 @@ export default async function WishlistPage() {
       {items.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-gray-500">ウィッシュリストに商品がありません。</p>
-          <a
+          {/* 変更: <a> → next/link の <Link> に変更 */}
+          <Link
             href="/products"
             className="mt-4 inline-block text-sm font-medium text-gray-900 underline underline-offset-4 hover:text-gray-700"
           >
             商品一覧へ
-          </a>
+          </Link>
         </div>
       ) : (
         <>

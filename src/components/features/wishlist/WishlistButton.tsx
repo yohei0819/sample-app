@@ -54,7 +54,12 @@ export const WishlistButton = ({ productId, initialIsWishlisted, isLoggedIn }: P
         router.refresh()
       } catch (err) {
         console.error('[WishlistButton] エラー:', err)
-        // 失敗した場合はUIを元に戻さない（ユーザー体験を維持）
+        // 変更: API失敗時はUIは変更されず、ユーザーにフィードバックを表示する
+        window.alert(
+          isWishlisted
+            ? 'ウィッシュリストからの削除に失敗しました。しばらくしてから再度お試しください。'
+            : 'ウィッシュリストへの追加に失敗しました。しばらくしてから再度お試しください。',
+        )
       } finally {
         setIsLoading(false)
       }

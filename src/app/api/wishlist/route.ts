@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db/prisma' // 追加: 商品存在確認用
 import {
   addProductToWishlist,
   findWishlistByUserId,
@@ -67,6 +68,18 @@ export const POST = async (req: NextRequest) => {
   const userId = session.user.id
 
   try {
+    // 追加: 商品の存在確認（存在しないIDへの外部キー制約違反を防ぐ）
+    const product = await prisma.product.findUnique({
+      where: { id: productId, isPublished: true },
+      select: { id: true },
+    })
+    if (!product) {
+      return NextResponse.json(
+        { error: '商品が見つかりません', code: 'NOT_FOUND' },
+        { status: 404 },
+      )
+    }
+
     // 重複チェック
     const alreadyExists = await isProductInWishlist(userId, productId)
     if (alreadyExists) {
