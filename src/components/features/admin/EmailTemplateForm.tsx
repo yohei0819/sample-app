@@ -101,7 +101,7 @@ export const EmailTemplateForm = ({
             {...register('subject')}
           />
           {errors.subject && (
-            <p id="subject-error" className="text-sm text-destructive">
+            <p id="subject-error" role="alert" className="text-sm text-destructive">
               {errors.subject.message}
             </p>
           )}
@@ -119,7 +119,7 @@ export const EmailTemplateForm = ({
             {...register('bodyHtml')}
           />
           {errors.bodyHtml && (
-            <p id="bodyHtml-error" className="text-sm text-destructive">
+            <p id="bodyHtml-error" role="alert" className="text-sm text-destructive">
               {errors.bodyHtml.message}
             </p>
           )}

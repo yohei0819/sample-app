@@ -136,7 +136,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
               aria-describedby={errors.name ? 'name-error' : undefined}
             />
             {errors.name && (
-              <p id="name-error" className="text-xs text-red-500">{errors.name.message}</p>
+              <p id="name-error" role="alert" className="text-xs text-red-500">{errors.name.message}</p>
             )}
           </div>
 
@@ -155,7 +155,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
               aria-describedby={errors.phone ? 'phone-error' : undefined}
             />
             {errors.phone && (
-              <p id="phone-error" className="text-xs text-red-500">{errors.phone.message}</p>
+              <p id="phone-error" role="alert" className="text-xs text-red-500">{errors.phone.message}</p>
             )}
           </div>
 
@@ -175,7 +175,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
               aria-describedby={errors.postalCode ? 'postal-code-error' : undefined}
             />
             {errors.postalCode && (
-              <p id="postal-code-error" className="text-xs text-red-500">{errors.postalCode.message}</p>
+              <p id="postal-code-error" role="alert" className="text-xs text-red-500">{errors.postalCode.message}</p>
             )}
           </div>
 
@@ -195,7 +195,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
                 aria-describedby={errors.prefecture ? 'prefecture-error' : undefined}
               />
               {errors.prefecture && (
-                <p id="prefecture-error" className="text-xs text-red-500">{errors.prefecture.message}</p>
+                <p id="prefecture-error" role="alert" className="text-xs text-red-500">{errors.prefecture.message}</p>
               )}
             </div>
             <div className="space-y-1">
@@ -212,7 +212,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
                 aria-describedby={errors.city ? 'city-error' : undefined}
               />
               {errors.city && (
-                <p id="city-error" className="text-xs text-red-500">{errors.city.message}</p>
+                <p id="city-error" role="alert" className="text-xs text-red-500">{errors.city.message}</p>
               )}
             </div>
           </div>
@@ -232,7 +232,7 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
               aria-describedby={errors.addressLine1 ? 'address-line1-error' : undefined}
             />
             {errors.addressLine1 && (
-              <p id="address-line1-error" className="text-xs text-red-500">{errors.addressLine1.message}</p>
+              <p id="address-line1-error" role="alert" className="text-xs text-red-500">{errors.addressLine1.message}</p>
             )}
           </div>
 

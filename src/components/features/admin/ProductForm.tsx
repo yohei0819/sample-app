@@ -76,7 +76,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
           aria-describedby={errors.name ? 'name-error' : undefined}
         />
         {errors.name && (
-          <p id="name-error" className="text-xs text-red-500">{errors.name.message}</p>
+          <p id="name-error" role="alert" className="text-xs text-red-500">{errors.name.message}</p>
         )}
       </div>
 
@@ -92,7 +92,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
           className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.description && (
-          <p className="text-xs text-red-500">{errors.description.message}</p>
+          <p role="alert" className="text-xs text-red-500">{errors.description.message}</p>
         )}
       </div>
 
@@ -111,7 +111,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
             aria-describedby={errors.price ? 'price-error' : undefined}
           />
           {errors.price && (
-            <p id="price-error" className="text-xs text-red-500">{errors.price.message}</p>
+            <p id="price-error" role="alert" className="text-xs text-red-500">{errors.price.message}</p>
           )}
         </div>
         <div className="space-y-1">
@@ -127,7 +127,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
             aria-describedby={errors.stock ? 'stock-error' : undefined}
           />
           {errors.stock && (
-            <p id="stock-error" className="text-xs text-red-500">{errors.stock.message}</p>
+            <p id="stock-error" role="alert" className="text-xs text-red-500">{errors.stock.message}</p>
           )}
         </div>
       </div>
