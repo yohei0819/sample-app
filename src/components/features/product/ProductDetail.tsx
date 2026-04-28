@@ -2,13 +2,19 @@
 import Image from 'next/image'
 import type { findProductById } from '@/lib/db/products'
 import { AddToCartButton } from './AddToCartButton'
+import { WishlistButton } from '@/components/features/wishlist/WishlistButton' // 追加
 
-// 変更: ReturnTypeベースの型定義でスキーマ変更に嫹応
+// 変更: ReturnTypeベースの型定義でスキーマ変更に対応
 type Props = {
   product: NonNullable<Awaited<ReturnType<typeof findProductById>>>
+  // 追加: ウィッシュリスト状態
+  wishlistProps: {
+    isLoggedIn: boolean
+    initialIsWishlisted: boolean
+  }
 }
 
-export const ProductDetail = ({ product }: Props) => {
+export const ProductDetail = ({ product, wishlistProps }: Props) => {
   const imageUrl = product.images[0] ?? null
 
   return (
@@ -74,9 +80,17 @@ export const ProductDetail = ({ product }: Props) => {
             </div>
           )}
 
-          {/* カートに追加ボタン */}
-          <div className="mt-auto pt-4">
-            <AddToCartButton productId={product.id} stock={product.stock} />
+          {/* カートに追加・ウィッシュリストボタン */}
+          <div className="mt-auto flex items-center gap-3 pt-4">
+            <div className="flex-1">
+              <AddToCartButton productId={product.id} stock={product.stock} />
+            </div>
+            {/* 追加: ウィッシュリストボタン */}
+            <WishlistButton
+              productId={product.id}
+              initialIsWishlisted={wishlistProps.initialIsWishlisted}
+              isLoggedIn={wishlistProps.isLoggedIn}
+            />
           </div>
         </div>
       </div>
