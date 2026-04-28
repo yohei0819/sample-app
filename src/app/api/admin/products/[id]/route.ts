@@ -3,6 +3,35 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { deleteProduct, findProductByIdForAdmin, updateProduct } from '@/lib/db/products'
 import { productSchema } from '@/lib/validators/product'
+// 追加: 在庫が 0→1 以上に増加した際の自動再入荷通知 (#76)
+import { findUnnotifiedByProductId, markAsNotified } from '@/lib/db/backInStock'
+import { sendBackInStockNotificationEmail } from '@/lib/email/sendBackInStockNotification'
+
+// 追加: 在庫補充時に未通知購読者に再入荷メールを送信する内部関数
+// fire-and-forget で呼び出され、レスポンスをブロックしない
+const notifyBackInStockSubscribers = async (product: {
+  id: string
+  name: string
+  images: string[]
+}) => {
+  try {
+    const subscriptions = await findUnnotifiedByProductId(product.id)
+    if (subscriptions.length === 0) return
+    const sentIds: string[] = []
+    for (const sub of subscriptions) {
+      const result = await sendBackInStockNotificationEmail({
+        to: sub.email,
+        product: { id: product.id, name: product.name, images: product.images },
+      })
+      if (result.success) sentIds.push(sub.id)
+    }
+    if (sentIds.length > 0) {
+      await markAsNotified(sentIds)
+    }
+  } catch (err) {
+    console.error('[notifyBackInStockSubscribers] エラー:', err)
+  }
+}
 
 // PUT /api/admin/products/[id] - 商品更新
 export const PUT = async (
@@ -39,6 +68,15 @@ export const PUT = async (
         ? { category: categoryId ? { connect: { id: categoryId } } : { disconnect: true } }
         : {}),
     })
+    // 追加: 在庫が 0 → 1 以上に変化したら未通知購読者に自動メール送信 (#76)
+    if (existing.stock <= 0 && product.stock > 0) {
+      // fire-and-forget: レスポンスをブロックしないため意図的に await しない
+      void notifyBackInStockSubscribers({
+        id: product.id,
+        name: product.name,
+        images: product.images,
+      })
+    }
     return NextResponse.json({ product })
   } catch (err) {
     console.error('[admin/products PUT] エラー:', err)
