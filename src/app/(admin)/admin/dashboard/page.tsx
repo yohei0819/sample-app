@@ -3,6 +3,9 @@ import { DashboardStats } from '@/components/features/admin/DashboardStats'
 import { RecentOrders } from '@/components/features/admin/RecentOrders'
 import { getDashboardStats, getRecentOrders } from '@/lib/db/stats'
 
+// 追加: 管理画面はDB必須のため動的レンダリングを強制
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'ダッシュボード | 管理画面',
 }
