@@ -47,20 +47,23 @@ export const updateOrderStatus = async (id: string, status: OrderStatus) => {
   return prisma.order.update({ where: { id }, data: { status } })
 }
 
-// 注文ステータス遷移の妥当性ルール
-// 各キーから遷移可能なステータス一覧を返す
-export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  PENDING: ['PAID', 'CANCELLED'],
-  PAID: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED', 'CANCELLED'],
-  DELIVERED: [],
-  CANCELLED: [],
+// 追加: 楽観ロック付きステータス更新
+// 期待する現在ステータスに一致する場合のみ更新し、更新件数（0 or 1）を返す
+export const updateOrderStatusIfMatches = async (
+  id: string,
+  expectedCurrentStatus: OrderStatus,
+  newStatus: OrderStatus,
+): Promise<number> => {
+  const result = await prisma.order.updateMany({
+    where: { id, status: expectedCurrentStatus },
+    data: { status: newStatus },
+  })
+  return result.count
 }
 
-// 注文ステータス遷移が妥当かを判定する
-export const canTransitionOrderStatus = (from: OrderStatus, to: OrderStatus): boolean => {
-  return ORDER_STATUS_TRANSITIONS[from]?.includes(to) ?? false
-}
+// 注文ステータス遷移の妥当性ルール・関数は constants/orders.ts へ移動
+// クライアント・サーバー双方から prisma 依存なしで参照できるようにするため
+export { ORDER_STATUS_TRANSITIONS, canTransitionOrderStatus } from '@/constants/orders'
 
 // 注文件数取得（管理画面ページネーション用）
 export const countOrders = async (params: { status?: OrderStatus } = {}) => {

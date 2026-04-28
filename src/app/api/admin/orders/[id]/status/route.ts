@@ -1,8 +1,9 @@
 // 管理画面 注文ステータス変更 API
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { canTransitionOrderStatus } from '@/constants/orders'
 import { requireAdmin } from '@/lib/admin-auth'
-import { canTransitionOrderStatus, findOrderById, updateOrderStatus } from '@/lib/db/orders'
+import { findOrderById, updateOrderStatusIfMatches } from '@/lib/db/orders'
 
 type RouteParams = {
   params: Promise<{ id: string }>
@@ -13,7 +14,7 @@ const updateStatusSchema = z.object({
   status: z.enum(['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
 })
 
-// PUT /api/admin/orders/:id/status - 注文ステータス変更（遷移妥当性チェック付き）
+// PUT /api/admin/orders/:id/status - 注文ステータス変更（遷移妥当性チェック + 楽観ロック）
 export const PUT = async (req: NextRequest, { params }: RouteParams) => {
   const check = await requireAdmin()
   if ('error' in check) {
@@ -58,7 +59,20 @@ export const PUT = async (req: NextRequest, { params }: RouteParams) => {
       )
     }
 
-    const updated = await updateOrderStatus(id, status)
+    // 変更: 楽観ロックでアトミックに更新（他リクエストとのレースコンディションを防止）
+    const updatedCount = await updateOrderStatusIfMatches(id, existing.status, status)
+    if (updatedCount === 0) {
+      // 直前に他者がステータスを変更したため再読み込みが必要
+      return NextResponse.json(
+        {
+          error: '他の操作により注文ステータスが変更されました。画面を更新してください',
+          code: 'STATUS_CHANGED',
+        },
+        { status: 409 },
+      )
+    }
+
+    const updated = await findOrderById(id)
     return NextResponse.json({ order: updated })
   } catch (err) {
     console.error('[admin/orders/:id/status PUT] エラー:', err)

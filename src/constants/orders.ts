@@ -22,3 +22,18 @@ export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
 // 注文履歴ページパス
 export const ORDERS_PATH = '/orders'
 export const ACCOUNT_PATH = '/account'
+
+// 追加: 注文ステータス遷移の妥当性ルール（純粋関数のためサーバー・クライアント双方から利用可能）
+// 各キーから遷移可能なステータス一覧を返す
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  PENDING: ['PAID', 'CANCELLED'],
+  PAID: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: [],
+  CANCELLED: [],
+}
+
+// 追加: 注文ステータス遷移が妥当かを判定する純粋関数
+export const canTransitionOrderStatus = (from: OrderStatus, to: OrderStatus): boolean => {
+  return ORDER_STATUS_TRANSITIONS[from]?.includes(to) ?? false
+}
