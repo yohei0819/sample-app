@@ -10,6 +10,8 @@ import { isProductInWishlist } from '@/lib/db/wishlist' // 追加
 import { ProductDetail } from '@/components/features/product/ProductDetail'
 import { ReviewForm } from '@/components/features/review/ReviewForm'
 import { ReviewList } from '@/components/features/review/ReviewList'
+import { env } from '@/env' // 追加: 構造化データ用URL生成
+import { SITE_NAME, TWITTER_CARD_TYPE } from '@/constants/seo' // 追加
 
 // 追加: React.cacheでラップして1リクエスト内のDBクエリ重複を解消
 const getCachedProductById = cache(findProductById)
@@ -24,13 +26,26 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
   if (!product) {
     return { title: '商品が見つかりません' }
   }
+  const description = product.description ?? `${product.name}の詳細ページです。`
+  const productUrl = `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/products/${product.id}`
+  const images = product.images[0] ? [{ url: product.images[0] }] : undefined
+
   return {
     title: product.name,
-    description: product.description ?? `${product.name}の詳細ページです。`,
+    description,
     openGraph: {
+      type: 'website', // 変更: 仕様に合わせて 'website' を指定
       title: product.name,
-      description: product.description ?? `${product.name}の詳細ページです。`,
-      ...(product.images[0] ? { images: [{ url: product.images[0] }] } : {}),
+      description,
+      url: productUrl,
+      siteName: SITE_NAME,
+      ...(images ? { images } : {}),
+    },
+    twitter: {
+      card: TWITTER_CARD_TYPE,
+      title: product.name,
+      description,
+      ...(product.images[0] ? { images: [product.images[0]] } : {}),
     },
   }
 }
@@ -40,6 +55,25 @@ export default async function ProductDetailPage({ params }: Props) {
 
   if (!product) {
     notFound()
+  }
+
+  // 追加: 商品 構造化データ（JSON-LD）
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.images,
+    description: product.description ?? `${product.name}の詳細ページです。`,
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'JPY',
+      availability:
+        product.stock > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+      url: `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}/products/${product.id}`,
+    },
   }
 
   // ログイン状態・レビュー済み確認
@@ -52,6 +86,11 @@ export default async function ProductDetailPage({ params }: Props) {
 
   return (
     <div>
+      {/* 追加: 商品の構造化データ（JSON-LD） */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       <ProductDetail
         product={product}
         wishlistProps={{ isLoggedIn: !!userId, initialIsWishlisted }} // 追加
