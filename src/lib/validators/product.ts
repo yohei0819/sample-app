@@ -18,6 +18,12 @@ export const productSchema = z.object({
   images: z
     .array(z.string().url('画像URLの形式が不正です'))
     .max(10, '画像は最大10枚までです'),
+  // 追加 (#106): 在庫アラート閾値（未指定時はサーバ側で既定値3を使用）
+  lowStockThreshold: z
+    .number()
+    .int('閾値は整数で入力してください')
+    .min(0, '閾値は0以上で入力してください')
+    .optional(),
 })
 
 export type ProductFormValues = z.infer<typeof productSchema>

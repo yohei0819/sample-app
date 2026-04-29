@@ -56,19 +56,23 @@ export const PUT = async (
       return NextResponse.json({ error: '入力内容に誤りがあります', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, price, stock, categoryId, isPublished, images } = parsed.data
-    const product = await updateProduct(id, { // 変更
-      name,
-      description,
-      price,
-      stock,
-      isPublished,
-      // 変更: 画像URL配列を更新（Cloudinaryアップロード後のURLを受け取る）
-      images,
-      ...(categoryId !== undefined
-        ? { category: categoryId ? { connect: { id: categoryId } } : { disconnect: true } }
-        : {}),
-    })
+    const { name, description, price, stock, categoryId, isPublished, images, lowStockThreshold } = parsed.data
+    const product = await updateProduct(
+      id,
+      {
+        name,
+        description,
+        price,
+        stock,
+        isPublished,
+        images,
+        ...(lowStockThreshold !== undefined ? { lowStockThreshold } : {}),
+        ...(categoryId !== undefined
+          ? { category: categoryId ? { connect: { id: categoryId } } : { disconnect: true } }
+          : {}),
+      },
+      { userId: check.session.user.id }, // 変更 (#106): 在庫変動履歴に操作者を記録
+    )
     // 追加: 在庫が 0 → 1 以上に変化したら未通知購読者に自動メール送信 (#76)
     if (existing.stock <= 0 && product.stock > 0) {
       // fire-and-forget: レスポンスをブロックしないため意図的に await しない

@@ -1,5 +1,6 @@
 // 管理画面ダッシュボード（Server Component）
 import { DashboardStats } from '@/components/features/admin/DashboardStats'
+import { LowStockWidget } from '@/components/features/admin/LowStockWidget'
 import { RecentOrders } from '@/components/features/admin/RecentOrders'
 import { getDashboardStats, getRecentOrders } from '@/lib/db/stats'
 
@@ -45,6 +46,9 @@ export default async function DashboardPage() {
 
       {/* 最新注文一覧 */}
       <RecentOrders orders={recentOrders} />
+
+      {/* 追加 (#106): 在庫アラートウィジェット */}
+      <LowStockWidget />
     </div>
   )
 }

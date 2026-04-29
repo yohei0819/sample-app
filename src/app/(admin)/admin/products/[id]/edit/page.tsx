@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { ProductForm } from '@/components/features/admin/ProductForm'
+import { StockMovementTimeline } from '@/components/features/admin/StockMovementTimeline'
 import { findProductByIdForAdmin } from '@/lib/db/products'
 import { findAllCategories } from '@/lib/db/categories'
 
@@ -54,9 +55,13 @@ export default async function AdminProductEditPage({ params }: Props) {
             stock: product.stock,
             categoryId: product.categoryId ?? '',
             isPublished: product.isPublished,
+            lowStockThreshold: product.lowStockThreshold,
           }}
         />
       </div>
+
+      {/* 追加 (#106): 在庫変動履歴タイムライン */}
+      <StockMovementTimeline productId={product.id} />
     </div>
   )
 }

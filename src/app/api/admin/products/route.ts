@@ -43,15 +43,15 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: '入力内容に誤りがあります', details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { name, description, price, stock, categoryId, isPublished, images } = parsed.data
+    const { name, description, price, stock, categoryId, isPublished, images, lowStockThreshold } = parsed.data
     const product = await createProduct({
       name,
       description,
       price,
       stock,
       isPublished,
-      // 変更: 画像URL配列を保存（Cloudinaryアップロード後のURLを受け取る）
       images,
+      ...(lowStockThreshold !== undefined ? { lowStockThreshold } : {}),
       ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
     })
     return NextResponse.json({ product }, { status: 201 })
