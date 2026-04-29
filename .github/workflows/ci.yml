@@ -124,7 +124,7 @@ jobs:
         run: pnpm prisma generate
 
       - name: Push Prisma schema (空 DB に作成)
-        run: pnpm prisma db push --skip-generate
+        run: pnpm prisma db push
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
