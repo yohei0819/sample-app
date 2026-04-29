@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ORDER_STATUS_CLASS, ORDER_STATUS_LABEL } from '@/constants/admin'
 import { ORDER_STATUS_TRANSITIONS } from '@/constants/orders'
+import { ShippingForm } from '@/components/features/admin/ShippingForm' // 追加 (#118)
 import type { Coupon, Order, OrderItem, OrderStatus, Product, User } from '@/generated/prisma/client'
 
 // 配送先住所の型定義
@@ -172,6 +173,13 @@ export const OrderDetail = ({ order }: Props) => {
         </div>
       )}
 
+      {/* 追加 (#118): 配送情報フォーム */}
+      <ShippingForm
+        orderId={order.id}
+        initialCarrier={order.carrier}
+        initialTrackingNumber={order.trackingNumber}
+      />
+
       {/* 注文商品 */}
       <div className="rounded-lg border bg-card shadow-sm">
         <div className="p-4 pb-0">
@@ -252,6 +260,22 @@ export const OrderDetail = ({ order }: Props) => {
             <div className="sm:col-span-2">
               <dt className="text-muted-foreground">Stripe PaymentIntent ID</dt>
               <dd className="font-mono text-xs">{order.stripePaymentIntentId}</dd>
+            </div>
+          )}
+          {order.shippedAt && (
+            <div>
+              <dt className="text-muted-foreground">発送日時</dt>
+              <dd className="font-medium">
+                {new Date(order.shippedAt).toLocaleString('ja-JP')}
+              </dd>
+            </div>
+          )}
+          {order.deliveredAt && (
+            <div>
+              <dt className="text-muted-foreground">配達日時</dt>
+              <dd className="font-medium">
+                {new Date(order.deliveredAt).toLocaleString('ja-JP')}
+              </dd>
             </div>
           )}
         </dl>

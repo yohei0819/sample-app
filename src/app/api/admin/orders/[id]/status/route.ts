@@ -86,6 +86,9 @@ export const PUT = async (req: NextRequest, { params }: RouteParams) => {
           order: {
             id: updated.id,
             shippingAddress: addressParsed.data,
+            // 追加 (#118): 配送追跡情報（既に登録されていれば）
+            carrier: updated.carrier,
+            trackingNumber: updated.trackingNumber,
           },
         })
       } else {

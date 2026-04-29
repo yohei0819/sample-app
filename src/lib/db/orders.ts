@@ -54,11 +54,44 @@ export const updateOrderStatusIfMatches = async (
   expectedCurrentStatus: OrderStatus,
   newStatus: OrderStatus,
 ): Promise<number> => {
+  // 追加 (#118): SHIPPED/DELIVERED へ遷移する際に shippedAt/deliveredAt を自動設定する
+  const data: Prisma.OrderUpdateManyMutationInput = { status: newStatus }
+  if (newStatus === 'SHIPPED') {
+    data.shippedAt = new Date()
+  } else if (newStatus === 'DELIVERED') {
+    data.deliveredAt = new Date()
+  }
   const result = await prisma.order.updateMany({
     where: { id, status: expectedCurrentStatus },
-    data: { status: newStatus },
+    data,
   })
   return result.count
+}
+
+// 追加 (#118): 配送追跡情報の更新
+// trackingNumber が新規に設定された場合、shippedAt も同時にセットする
+export const updateOrderShipping = async (
+  id: string,
+  data: { carrier: string | null; trackingNumber: string | null },
+) => {
+  const existing = await prisma.order.findUnique({
+    where: { id },
+    select: { trackingNumber: true, shippedAt: true },
+  })
+  if (!existing) return null
+
+  const updateData: Prisma.OrderUpdateInput = {
+    carrier: data.carrier,
+    trackingNumber: data.trackingNumber,
+  }
+  // 追跡番号が新規に入力された場合は発送日時を自動設定
+  if (data.trackingNumber && !existing.shippedAt) {
+    updateData.shippedAt = new Date()
+  }
+  return prisma.order.update({
+    where: { id },
+    data: updateData,
+  })
 }
 
 // 注文ステータス遷移の妥当性ルール・関数は constants/orders.ts へ移動
