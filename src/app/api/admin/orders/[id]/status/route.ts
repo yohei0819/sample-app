@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { canTransitionOrderStatus } from '@/constants/orders'
 import { requireAdmin } from '@/lib/admin-auth'
+import { AuditAction, recordAuditLog } from '@/lib/audit' // 追加 (#121)
 import { findOrderById, updateOrderStatusIfMatches } from '@/lib/db/orders'
 import { sendShipmentNotificationEmail } from '@/lib/email/sendShipmentNotification' // 追加
 import { shippingAddressSchema } from '@/lib/validators/order' // 変更: ダブルキャスト解消のため Zod パースを使用
@@ -95,6 +96,15 @@ export const PUT = async (req: NextRequest, { params }: RouteParams) => {
         console.error('[admin/orders/:id/status PUT] shippingAddress パース失敗。メール送信をスキップ:', addressParsed.error.flatten())
       }
     }
+
+    // 追加 (#121): 監査ログ記録
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: AuditAction.ORDER_STATUS_CHANGE,
+      targetType: 'Order',
+      targetId: id,
+      metadata: { from: existing.status, to: status },
+    })
 
     return NextResponse.json({ order: updated })
   } catch (err) {

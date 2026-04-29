@@ -1,6 +1,7 @@
 // 追加 (#107): タイムセール管理 API（更新・削除）
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { AuditAction, recordAuditLog } from '@/lib/audit' // 追加 (#121)
 import {
   deleteSale,
   findOverlappingSale,
@@ -63,6 +64,14 @@ export const PUT = async (
     }
 
     const sale = await updateSale(id, { salePrice, startsAt, endsAt, isActive })
+    // 追加 (#121): 監査ログ記録
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: AuditAction.SALE_UPDATE,
+      targetType: 'Sale',
+      targetId: id,
+      metadata: { salePrice, startsAt, endsAt, isActive },
+    })
     return NextResponse.json({ sale })
   } catch (err) {
     console.error('[admin/sales PUT] エラー:', err)
@@ -84,6 +93,13 @@ export const DELETE = async (
   const { id } = await params
   try {
     await deleteSale(id)
+    // 追加 (#121): 監査ログ記録
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: AuditAction.SALE_DELETE,
+      targetType: 'Sale',
+      targetId: id,
+    })
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[admin/sales DELETE] エラー:', err)
