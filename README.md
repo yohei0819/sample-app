@@ -80,6 +80,25 @@ npm run build
 npm run start
 ```
 
+## セキュリティポリシー
+
+### セキュリティヘッダー（#122）
+全ルートに以下のヘッダーを `next.config.mjs` で付与している。
+
+| ヘッダー | 値 | 目的 |
+|---|---|---|
+| `Content-Security-Policy` | `default-src 'self'` ベース。Stripe・Cloudinary・Sentry・Resend を許可 | XSS / データインジェクション防止 |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | HTTPS 強制 |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | リファラー漏洩防止 |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | 不要な権限 API を全拒否 |
+| `X-Content-Type-Options` | `nosniff` | MIME スニッフィング防止 |
+| `X-Frame-Options` | `DENY` | クリックジャッキング防止 |
+
+CSP の `script-src` には Next.js のインライン runtime と Stripe.js のため `'unsafe-inline'` `'unsafe-eval'` を許容している。将来的には nonce 方式への移行を検討する。
+
+### 脆弱性スキャン
+CI では `pnpm audit --audit-level=critical --prod` で critical のみ fail、high は警告表示で継続する。
+
 ## ライセンス
 
 <!-- TODO: ライセンスを記載してください -->
