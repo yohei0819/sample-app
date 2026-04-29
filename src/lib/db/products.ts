@@ -2,18 +2,40 @@ import { prisma } from '@/lib/db/prisma'
 import type { Product, Prisma } from '@/generated/prisma/client'
 
 // 商品一覧取得（フィルター・ページネーション付き）
+// 変更 (#104): 価格レンジ・在庫切れ非表示・人気順ソートに対応
 export const findProducts = async (params: {
   categoryId?: string
   search?: string
   take?: number
   skip?: number
   orderBy?: Prisma.ProductOrderByWithRelationInput
+  minPrice?: number
+  maxPrice?: number
+  inStockOnly?: boolean
 }) => {
-  const { categoryId, search, take = 20, skip = 0, orderBy = { createdAt: 'desc' } } = params
+  const {
+    categoryId,
+    search,
+    take = 20,
+    skip = 0,
+    orderBy = { createdAt: 'desc' },
+    minPrice,
+    maxPrice,
+    inStockOnly,
+  } = params
+
+  // 追加 (#104): 価格レンジ条件を構築
+  const priceFilter: Prisma.IntFilter = {}
+  if (typeof minPrice === 'number') priceFilter.gte = minPrice
+  if (typeof maxPrice === 'number') priceFilter.lte = maxPrice
+  const hasPriceFilter = Object.keys(priceFilter).length > 0
+
   return prisma.product.findMany({
     where: {
       isPublished: true,
       ...(categoryId ? { categoryId } : {}),
+      ...(hasPriceFilter ? { price: priceFilter } : {}),
+      ...(inStockOnly ? { stock: { gt: 0 } } : {}),
       ...(search
         ? {
             OR: [
@@ -27,6 +49,23 @@ export const findProducts = async (params: {
     take,
     skip,
     orderBy,
+  })
+}
+
+// 追加 (#104): 検索サジェスト用（商品名 prefix 一致・公開済み）
+export const findProductSuggestions = async (params: {
+  query: string
+  limit?: number
+}) => {
+  const { query, limit = 8 } = params
+  return prisma.product.findMany({
+    where: {
+      isPublished: true,
+      name: { contains: query, mode: 'insensitive' },
+    },
+    select: { id: true, name: true },
+    take: limit,
+    orderBy: { name: 'asc' },
   })
 }
 
