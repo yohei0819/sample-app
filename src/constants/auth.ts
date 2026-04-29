@@ -7,5 +7,7 @@ export const BCRYPT_SALT_ROUNDS = 12
 export const AUTH_ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password', // 追加 (#129)
+  RESET_PASSWORD: '/reset-password', // 追加 (#129)
   DEFAULT_REDIRECT: '/',
 } as const
