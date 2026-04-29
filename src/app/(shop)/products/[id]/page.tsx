@@ -9,6 +9,8 @@ import { findReviewByUserAndProduct } from '@/lib/db/reviews'
 import { getReviewStatsByProductId } from '@/lib/db/reviews' // 追加: aggregateRating用
 import { isProductInWishlist } from '@/lib/db/wishlist' // 追加
 import { ProductDetail } from '@/components/features/product/ProductDetail'
+import { RelatedProducts } from '@/components/features/product/RelatedProducts' // 追加 (#103)
+import { RecentlyViewedProducts } from '@/components/features/product/RecentlyViewedProducts' // 追加 (#103)
 import { ReviewForm } from '@/components/features/review/ReviewForm'
 import { ReviewList } from '@/components/features/review/ReviewList'
 import { env } from '@/env' // 追加: 構造化データ用URL生成
@@ -155,6 +157,19 @@ export default async function ProductDetailPage({ params }: Props) {
           productId={product.id}
           isLoggedIn={!!userId}
           hasReviewed={hasReviewed}
+        />
+        {/* 追加 (#103): 関連商品（同カテゴリ） */}
+        <Suspense fallback={null}>
+          <RelatedProducts categoryId={product.categoryId} excludeId={product.id} />
+        </Suspense>
+        {/* 追加 (#103): 最近見た商品（クライアント側） */}
+        <RecentlyViewedProducts
+          currentProduct={{
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            imageUrl: product.images[0] ?? null,
+          }}
         />
       </div>
     </div>

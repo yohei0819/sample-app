@@ -95,6 +95,25 @@ export const findProductByIdForAdmin = async (id: string) => {
   })
 }
 
+// 追加 (#103): 関連商品取得（同カテゴリ・公開済み・指定商品を除外）
+export const findRelatedProducts = async (params: {
+  categoryId: string
+  excludeId: string
+  limit?: number
+}) => {
+  const { categoryId, excludeId, limit = 8 } = params
+  return prisma.product.findMany({
+    where: {
+      isPublished: true,
+      categoryId,
+      id: { not: excludeId },
+    },
+    include: { category: true },
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+  })
+}
+
 type CartItemInput = {
   id: string
   quantity: number
