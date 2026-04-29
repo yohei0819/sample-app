@@ -22,7 +22,7 @@ export default function CartPage() {
     return (
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-8 text-2xl font-bold tracking-tight">カート</h1>
-        <div className="animate-pulse space-y-4" aria-label="読み込み中">
+        <div className="animate-pulse space-y-4" role="status" aria-label="読み込み中">
           <div className="h-24 rounded-lg bg-muted" />
           <div className="h-24 rounded-lg bg-muted" />
         </div>

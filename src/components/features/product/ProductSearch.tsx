@@ -103,9 +103,6 @@ export const ProductSearch = () => {
           placeholder="商品を検索..."
           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
           aria-label="商品を検索"
-          aria-autocomplete="list"
-          aria-expanded={isOpen && suggestions.length > 0}
-          aria-controls="search-suggestions"
         />
         <button
           type="submit"
