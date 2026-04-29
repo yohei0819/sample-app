@@ -19,12 +19,14 @@ import { safeJsonLd } from '@/lib/seo/jsonLd' // 追加: JSON-LD XSS対策
 const getCachedProductById = cache(findProductById)
 
 type Props = {
-  params: { id: string }
+  // 変更: Next.js 15 の非同期 params
+  params: Promise<{ id: string }>
 }
 
 // OGPメタデータ生成
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
-  const product = await getCachedProductById(params.id) // 変更: キャッシュ経由で取得
+  const { id } = await params // 変更
+  const product = await getCachedProductById(id) // 変更
   if (!product) {
     return { title: '商品が見つかりません' }
   }
@@ -53,7 +55,8 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
 }
 
 export default async function ProductDetailPage({ params }: Props) {
-  const product = await getCachedProductById(params.id) // 変更: キャッシュ経由で取得
+  const { id } = await params // 変更: Next.js 15 の非同期 params
+  const product = await getCachedProductById(id) // 変更: キャッシュ経由で取得
 
   if (!product) {
     notFound()

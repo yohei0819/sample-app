@@ -26,7 +26,8 @@ type SearchParams = {
 }
 
 type Props = {
-  searchParams: SearchParams
+  // 変更: Next.js 15 の非同期 searchParams
+  searchParams: Promise<SearchParams>
 }
 
 // 追加: string[] が渡された場合は最初の要素を取り出す安全なヘルパー
@@ -42,10 +43,12 @@ const SORT_ORDER_MAP: Record<string, Prisma.ProductOrderByWithRelationInput> = {
 }
 
 export default async function ProductsPage({ searchParams }: Props) {
+  // 変更: Next.js 15 では searchParams が Promise になる
+  const sp = await searchParams
   // 変更: resolveParam で string[] を安全に string へ変換してから Prisma へ渡す
-  const search = resolveParam(searchParams.search)
-  const categoryId = resolveParam(searchParams.categoryId)
-  const sort = resolveParam(searchParams.sort) ?? 'newest'
+  const search = resolveParam(sp.search)
+  const categoryId = resolveParam(sp.categoryId)
+  const sort = resolveParam(sp.sort) ?? 'newest'
   const orderBy = SORT_ORDER_MAP[sort] ?? { createdAt: 'desc' }
 
   // 追加: セッション取得（ウィッシュリスト状態取得のため）
