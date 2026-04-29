@@ -7,6 +7,7 @@ import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google' // 追加 (#105)
 import { env } from '@/env'
 import { findUserByEmail, createUser } from '@/lib/db/users' // 変更 (#105): createUser 追加
+import { prisma } from '@/lib/db/prisma' // 追加 (#120)
 
 // Session 型拡張：id・role フィールドを追加
 declare module 'next-auth' {
@@ -17,6 +18,7 @@ declare module 'next-auth' {
     user: {
       id: string
       role: string
+      isEmailVerified: boolean // 追加 (#120)
     } & DefaultSession['user']
   }
 }
@@ -26,6 +28,7 @@ declare module 'next-auth' {
 type JwtToken = {
   id?: string
   role?: string
+  isEmailVerified?: boolean // 追加 (#120)
   [key: string]: unknown
 }
 
@@ -87,6 +90,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (existing) {
         // 既存ユーザーが無効化されている場合はログイン拒否
         if (existing.isActive === false) return false
+        // 追加 (#120): Google OAuth で認証済みなら emailVerifiedAt を自動セット
+        if (!existing.emailVerifiedAt) {
+          await prisma.user.update({
+            where: { id: existing.id },
+            data: { emailVerifiedAt: new Date() },
+          })
+        }
         // 既存ユーザーの id/role を user オブジェクトに反映（jwt callback へ伝播）
         user.id = existing.id
         user.role = existing.role
@@ -98,18 +108,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: user.email,
         name: user.name ?? null,
         // passwordHash 未設定（Google 認証専用）
+        emailVerifiedAt: new Date(), // 追加 (#120): Google OAuth は確認済みとみなす
       })
       user.id = created.id
       user.role = created.role
       return true
     },
     // JWT にユーザー情報を追加
-    jwt({ token, user }) {
+    jwt({ token, user, trigger }) {
       const t = token as JwtToken
       if (user) {
         // 変更: user.id は string 型のため as string キャスト不要
         t.id = user.id
         t.role = user.role
+      }
+      // 追加 (#120): セッション初回 or 更新トリガー時に DB の emailVerifiedAt を反映
+      if (trigger === 'update' || (user && t.id)) {
+        // 非同期での読み込みは jwt() で許容される
+        return prisma.user
+          .findUnique({ where: { id: t.id }, select: { emailVerifiedAt: true } })
+          .then((u) => {
+            t.isEmailVerified = Boolean(u?.emailVerifiedAt)
+            return token
+          })
+          .catch(() => token)
       }
       return token
     },
@@ -118,6 +140,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const t = token as JwtToken
       session.user.id = t.id ?? ''
       session.user.role = t.role ?? 'USER'
+      session.user.isEmailVerified = Boolean(t.isEmailVerified) // 追加 (#120)
       return session
     },
   },

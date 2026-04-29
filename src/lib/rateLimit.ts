@@ -6,6 +6,7 @@ import {
   RATE_LIMITS,
   RATE_LIMIT_ERROR_CODE,
   RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_WINDOW_OVERRIDES,
   type RateLimitKey,
 } from '@/constants/rateLimit'
 
@@ -45,15 +46,16 @@ export const enforceRateLimit = (
   req: Request,
 ): NextResponse | null => {
   const limit = RATE_LIMITS[routeKey]
+  const windowMs = RATE_LIMIT_WINDOW_OVERRIDES[routeKey] ?? RATE_LIMIT_WINDOW_MS
   const identifier = getClientIdentifier(req)
   const bucketKey = `${routeKey}:${identifier}`
-  const allowed = checkRateLimit(bucketKey, limit, RATE_LIMIT_WINDOW_MS)
+  const allowed = checkRateLimit(bucketKey, limit, windowMs)
   if (allowed) return null
 
   const bucket = buckets.get(bucketKey)
   const retryAfterSec = bucket
     ? Math.max(Math.ceil((bucket.resetAt - Date.now()) / 1000), 1)
-    : Math.ceil(RATE_LIMIT_WINDOW_MS / 1000)
+    : Math.ceil(windowMs / 1000)
 
   return NextResponse.json(
     {

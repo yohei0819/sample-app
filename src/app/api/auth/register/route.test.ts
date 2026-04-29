@@ -13,6 +13,12 @@ vi.mock('bcryptjs', () => ({
 vi.mock('@/lib/rateLimit', () => ({
   enforceRateLimit: vi.fn().mockReturnValue(null),
 }))
+vi.mock('@/lib/db/emailVerificationTokens', () => ({
+  issueEmailVerificationToken: vi.fn().mockResolvedValue({ token: 'tok', expiresAt: new Date() }),
+}))
+vi.mock('@/lib/email/sendEmailVerification', () => ({
+  sendEmailVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
+}))
 
 import { POST } from './route'
 import { findUserByEmail, createUser } from '@/lib/db/users'

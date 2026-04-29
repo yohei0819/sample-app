@@ -8,6 +8,7 @@ import { getEffectivePrice } from '@/lib/sale' // 追加 (#107)
 import { stripe } from '@/lib/stripe'
 import { enforceRateLimit } from '@/lib/rateLimit'
 import { logger } from '@/lib/logger' // 追加
+import { isEmailVerified } from '@/lib/emailVerificationGuard' // 追加 (#120)
 
 type CartItemInput = {
   id: string
@@ -28,6 +29,14 @@ export const POST = async (req: NextRequest) => {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: '認証が必要です', code: 'UNAUTHORIZED' }, { status: 401 })
+  }
+
+  // 追加 (#120): メールアドレス未確認のユーザーは決済不可
+  if (!(await isEmailVerified(session.user.id))) {
+    return NextResponse.json(
+      { error: 'メールアドレスの確認が完了していません', code: 'EMAIL_NOT_VERIFIED' },
+      { status: 403 },
+    )
   }
 
   const body: unknown = await req.json()

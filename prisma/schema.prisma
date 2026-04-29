@@ -56,16 +56,32 @@ model User {
   passwordHash String?
   role         Role     @default(USER)
   isActive     Boolean  @default(true) // 追加: 有効/無効フラグ
+  emailVerifiedAt DateTime? // 追加 (#120): メールアドレス確認日時
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  orders         Order[]
-  cart           Cart?
-  reviews        Review[]
-  wishlist       Wishlist?
-  stockMovements StockMovement[] // 追加 (#106)
+  orders                  Order[]
+  cart                    Cart?
+  reviews                 Review[]
+  wishlist                Wishlist?
+  stockMovements          StockMovement[] // 追加 (#106)
+  emailVerificationTokens EmailVerificationToken[] // 追加 (#120)
 
   @@map("users")
+}
+
+// 追加 (#120): メールアドレス確認トークン
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 // ----- カテゴリ -----
