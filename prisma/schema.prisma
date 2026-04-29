@@ -178,6 +178,12 @@ model Order {
   stripePaymentIntentId String?
   shippingAddress       Json? // 配送先住所
 
+  // 追加 (#118): 配送追跡情報
+  carrier        String? // 配送業者コード（例: yamato / sagawa / japanpost）
+  trackingNumber String? // 追跡番号
+  shippedAt      DateTime? // 発送日時（SHIPPED 遷移時に自動設定）
+  deliveredAt    DateTime? // 配達完了日時（DELIVERED 遷移時に自動設定）
+
   @@map("orders")
 }
 

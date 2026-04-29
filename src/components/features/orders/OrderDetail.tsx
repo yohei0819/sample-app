@@ -5,6 +5,7 @@ import { ArrowLeft, Package } from 'lucide-react'
 import type { Order, OrderItem, Product } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 import { OrderStatusBadge } from '@/components/features/orders/OrderStatusBadge'
+import { OrderTimeline } from '@/components/features/orders/OrderTimeline' // 追加 (#118)
 
 type OrderItemWithProduct = OrderItem & { product: Product }
 type OrderWithItems = Order & { items: OrderItemWithProduct[] }
@@ -53,6 +54,9 @@ export const OrderDetail = ({ order }: Props) => {
           </time>
         </div>
       </div>
+
+      {/* 進捗タイムライン (#118) */}
+      <OrderTimeline order={order} />
 
       {/* 注文商品 */}
       <section aria-labelledby="order-items-heading">
