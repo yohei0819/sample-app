@@ -36,6 +36,10 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'SHIPPED', label: '発送済' },
   { value: 'DELIVERED', label: '配達完了' },
   { value: 'CANCELLED', label: 'キャンセル' },
+  // 追加 (#117)
+  { value: 'RETURN_REQUESTED', label: '返品申請中' },
+  { value: 'RETURNED', label: '返品受付済' },
+  { value: 'REFUNDED', label: '返金済' },
 ]
 
 export const OrderDetail = ({ order }: Props) => {
@@ -76,6 +80,40 @@ export const OrderDetail = ({ order }: Props) => {
       router.refresh()
     } catch {
       setErrorMsg('ステータスの更新中にエラーが発生しました')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  // 追加 (#117): Stripe 返金実行
+  const handleRefund = async () => {
+    if (
+      !confirm(
+        `この注文（¥${order.totalPrice.toLocaleString('ja-JP')}）を Stripe 経由で返金します。よろしいですか？\nこの操作は取り消せません。`,
+      )
+    )
+      return
+
+    setIsUpdating(true)
+    setErrorMsg(null)
+
+    try {
+      const res = await fetch(`/api/admin/orders/${order.id}/refund`, { method: 'POST' })
+      if (!res.ok) {
+        const data: unknown = await res.json().catch(() => ({}))
+        const msg =
+          data !== null &&
+          typeof data === 'object' &&
+          'error' in data &&
+          typeof (data as { error: unknown }).error === 'string'
+            ? (data as { error: string }).error
+            : '返金処理に失敗しました'
+        setErrorMsg(msg)
+        return
+      }
+      router.refresh()
+    } catch {
+      setErrorMsg('返金処理中にエラーが発生しました')
     } finally {
       setIsUpdating(false)
     }
@@ -137,6 +175,67 @@ export const OrderDetail = ({ order }: Props) => {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* 追加 (#117): 返品・返金情報 */}
+      {(order.status === 'RETURN_REQUESTED' ||
+        order.status === 'RETURNED' ||
+        order.status === 'REFUNDED' ||
+        order.returnRequestedAt) && (
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold">返品・返金情報</h2>
+          <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            {order.returnRequestedAt && (
+              <div>
+                <dt className="text-muted-foreground">返品申請日時</dt>
+                <dd className="font-medium">
+                  {new Date(order.returnRequestedAt).toLocaleString('ja-JP')}
+                </dd>
+              </div>
+            )}
+            {order.returnReason && (
+              <div className="sm:col-span-2">
+                <dt className="text-muted-foreground">返品理由</dt>
+                <dd className="font-medium whitespace-pre-wrap">{order.returnReason}</dd>
+              </div>
+            )}
+            {order.refundedAt && (
+              <div>
+                <dt className="text-muted-foreground">返金日時</dt>
+                <dd className="font-medium">
+                  {new Date(order.refundedAt).toLocaleString('ja-JP')}
+                </dd>
+              </div>
+            )}
+            {order.refundedAmount !== null && order.refundedAmount !== undefined && (
+              <div>
+                <dt className="text-muted-foreground">返金額</dt>
+                <dd className="font-medium">¥{order.refundedAmount.toLocaleString('ja-JP')}</dd>
+              </div>
+            )}
+            {order.stripeRefundId && (
+              <div className="sm:col-span-2">
+                <dt className="text-muted-foreground">Stripe Refund ID</dt>
+                <dd className="font-mono text-xs">{order.stripeRefundId}</dd>
+              </div>
+            )}
+          </dl>
+          {order.status === 'RETURNED' && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleRefund}
+                disabled={isUpdating}
+                className="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Stripe で返金を実行する
+              </button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                ※ 実行後、注文ステータスが「返金済」に変わり、顧客にメール通知が送信されます。
+              </p>
+            </div>
+          )}
         </div>
       )}
 

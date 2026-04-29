@@ -62,14 +62,14 @@ describe('canTransitionOrderStatus', () => {
     })
   })
 
-  describe('DELIVERED は終端状態', () => {
-    const targets: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']
-    it.each(targets)('DELIVERED から %s への遷移を全て拒否する', (to) => {
+  describe('DELIVERED は返品申請のみ可能', () => {
+    const denied: OrderStatus[] = ['PENDING', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+    it.each(denied)('DELIVERED から %s への遷移を拒否する', (to) => {
       expect(canTransitionOrderStatus('DELIVERED', to)).toBe(false)
     })
 
-    it('遷移可能リストが空配列である', () => {
-      expect(ORDER_STATUS_TRANSITIONS.DELIVERED).toEqual([])
+    it('RETURN_REQUESTED への遷移は許可する (#117)', () => {
+      expect(canTransitionOrderStatus('DELIVERED', 'RETURN_REQUESTED')).toBe(true)
     })
   })
 
@@ -81,6 +81,27 @@ describe('canTransitionOrderStatus', () => {
 
     it('遷移可能リストが空配列である', () => {
       expect(ORDER_STATUS_TRANSITIONS.CANCELLED).toEqual([])
+    })
+  })
+
+  describe('返品フロー (#117)', () => {
+    it('PAID から RETURN_REQUESTED への遷移を許可する', () => {
+      expect(canTransitionOrderStatus('PAID', 'RETURN_REQUESTED')).toBe(true)
+    })
+    it('SHIPPED から RETURN_REQUESTED への遷移を許可する', () => {
+      expect(canTransitionOrderStatus('SHIPPED', 'RETURN_REQUESTED')).toBe(true)
+    })
+    it('RETURN_REQUESTED から RETURNED への遷移を許可する', () => {
+      expect(canTransitionOrderStatus('RETURN_REQUESTED', 'RETURNED')).toBe(true)
+    })
+    it('RETURNED から REFUNDED への遷移を許可する', () => {
+      expect(canTransitionOrderStatus('RETURNED', 'REFUNDED')).toBe(true)
+    })
+    it('REFUNDED は終端状態である', () => {
+      expect(ORDER_STATUS_TRANSITIONS.REFUNDED).toEqual([])
+    })
+    it('PENDING から RETURN_REQUESTED への遷移を拒否する（未支払いなので）', () => {
+      expect(canTransitionOrderStatus('PENDING', 'RETURN_REQUESTED')).toBe(false)
     })
   })
 })

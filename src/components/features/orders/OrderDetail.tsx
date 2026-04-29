@@ -6,6 +6,7 @@ import type { Order, OrderItem, Product } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 import { OrderStatusBadge } from '@/components/features/orders/OrderStatusBadge'
 import { OrderTimeline } from '@/components/features/orders/OrderTimeline' // 追加 (#118)
+import { ReturnRequestButton } from '@/components/features/orders/ReturnRequestButton' // 追加 (#117)
 
 type OrderItemWithProduct = OrderItem & { product: Product }
 type OrderWithItems = Order & { items: OrderItemWithProduct[] }
@@ -29,6 +30,10 @@ export const OrderDetail = ({ order }: Props) => {
 
   // shippingAddress は Json? 型なのでキャストして扱う
   const shipping = order.shippingAddress as ShippingAddress | null
+
+  // 返品申請可能かどうか（#117）: PAID/SHIPPED/DELIVERED のみ
+  const canRequestReturn =
+    order.status === 'PAID' || order.status === 'SHIPPED' || order.status === 'DELIVERED'
 
   return (
     <div className="space-y-6">
@@ -133,6 +138,47 @@ export const OrderDetail = ({ order }: Props) => {
             )}
             <p className="text-muted-foreground">TEL: {shipping.phone}</p>
           </address>
+        </section>
+      )}
+
+      {/* 返品・返金情報 (#117) */}
+      {(order.status === 'RETURN_REQUESTED' ||
+        order.status === 'RETURNED' ||
+        order.status === 'REFUNDED') && (
+        <section aria-labelledby="order-return-heading">
+          <h2 id="order-return-heading" className="mb-3 font-semibold">
+            返品・返金情報
+          </h2>
+          <div className="rounded-lg border bg-card p-4 text-sm space-y-2">
+            {order.returnRequestedAt && (
+              <p>
+                <span className="text-muted-foreground">申請日:</span>{' '}
+                {new Date(order.returnRequestedAt).toLocaleString('ja-JP')}
+              </p>
+            )}
+            {order.returnReason && (
+              <p>
+                <span className="text-muted-foreground">理由:</span> {order.returnReason}
+              </p>
+            )}
+            {order.refundedAt && order.refundedAmount !== null && (
+              <p>
+                <span className="text-muted-foreground">返金額:</span> ¥
+                {order.refundedAmount.toLocaleString()}（
+                {new Date(order.refundedAt).toLocaleString('ja-JP')}）
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 返品申請ボタン (#117) */}
+      {canRequestReturn && (
+        <section aria-labelledby="order-return-action-heading">
+          <h2 id="order-return-action-heading" className="sr-only">
+            返品申請
+          </h2>
+          <ReturnRequestButton orderId={order.id} />
         </section>
       )}
     </div>
