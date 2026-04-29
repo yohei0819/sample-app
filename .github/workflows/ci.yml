@@ -65,3 +65,75 @@ jobs:
       - name: Audit (high の警告表示)
         run: pnpm audit --audit-level=high --prod || true
         continue-on-error: true
+
+  # 追加 (#108): アクセシビリティ自動監査 (axe-core を Playwright で実行)
+  # critical/serious 違反 0 を必須とする。WCAG 2.1 AA を対象。
+  e2e-a11y:
+    name: E2E (axe a11y)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: a11y_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/a11y_test
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ci-dummy-secret
+      STRIPE_SECRET_KEY: sk_test_dummy
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_dummy
+      STRIPE_WEBHOOK_SECRET: whsec_dummy
+      CLOUDINARY_CLOUD_NAME: dummy
+      CLOUDINARY_API_KEY: dummy
+      CLOUDINARY_API_SECRET: dummy
+      RESEND_API_KEY: re_dummy
+      EMAIL_FROM: onboarding@resend.dev
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Push Prisma schema (空 DB に作成)
+        run: pnpm prisma db push
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build Next.js (本番モード)
+        run: pnpm build
+
+      - name: Start Next.js & run a11y tests
+        # webServer は playwright.config の設定に従う (pnpm dev)。
+        # CI では本番ビルドを別途起動するため、専用設定で start を使うのが望ましいが、
+        # 最小実装として既存設定に従い dev サーバーを起動する。
+        run: pnpm e2e a11y.spec.ts

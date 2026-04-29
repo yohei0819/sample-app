@@ -6,6 +6,7 @@ import AxeBuilder from '@axe-core/playwright'
 
 const PUBLIC_PAGES = [
   { path: '/', name: 'トップ' },
+  { path: '/products', name: '商品一覧' }, // 追加
   { path: '/login', name: 'ログイン' },
   { path: '/register', name: '会員登録' },
   { path: '/cart', name: 'カート' },
