@@ -13,6 +13,8 @@ export const RATE_LIMITS = {
   PAYMENT_INTENT: 20,
   // 画像アップロード
   ADMIN_UPLOAD: 30,
+  // 追加 (#104): 検索サジェスト
+  SEARCH_SUGGEST: 60,
 } as const
 
 export type RateLimitKey = keyof typeof RATE_LIMITS

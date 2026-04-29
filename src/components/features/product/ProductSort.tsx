@@ -7,6 +7,7 @@ const SORT_OPTIONS = [
   { value: 'newest', label: '新着順' },
   { value: 'price_asc', label: '価格が安い順' },
   { value: 'price_desc', label: '価格が高い順' },
+  { value: 'popular', label: '人気順' }, // 追加 (#104)
 ] as const
 
 export const ProductSort = () => {
