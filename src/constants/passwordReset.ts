@@ -1,0 +1,5 @@
+// 追加 (#129): パスワードリセット関連の定数
+export const PASSWORD_RESET_TOKEN_TTL_HOURS = 24
+export const PASSWORD_RESET_TOKEN_TTL_MS =
+  PASSWORD_RESET_TOKEN_TTL_HOURS * 60 * 60 * 1000
+export const PASSWORD_RESET_TOKEN_BYTES = 32

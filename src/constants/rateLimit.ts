@@ -19,6 +19,10 @@ export const RATE_LIMITS = {
   EMAIL_VERIFY_RESEND: 1,
   // 追加 (#119): カート操作（API）
   CART_OPERATION: 60,
+  // 追加 (#129): パスワードリセット要求（5分に1回）
+  PASSWORD_RESET_REQUEST: 1,
+  // 追加 (#129): パスワードリセット実行（IP 単位、ブルートフォース対策）
+  PASSWORD_RESET_CONSUME: 10,
 } as const
 
 export type RateLimitKey = keyof typeof RATE_LIMITS
@@ -26,6 +30,7 @@ export type RateLimitKey = keyof typeof RATE_LIMITS
 // 追加 (#120): キーごとに異なるウィンドウを使用したい場合の上書き定義
 export const RATE_LIMIT_WINDOW_OVERRIDES: Partial<Record<RateLimitKey, number>> = {
   EMAIL_VERIFY_RESEND: 5 * 60 * 1000, // 5分
+  PASSWORD_RESET_REQUEST: 5 * 60 * 1000, // 5分（#129）
 }
 
 // レート制限超過時のエラーコード

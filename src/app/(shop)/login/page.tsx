@@ -38,6 +38,15 @@ export default function LoginPage() {
             会員登録
           </Link>
         </p>
+        {/* 追加 (#129): パスワードリセットへのリンク */}
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          <Link
+            href={AUTH_ROUTES.FORGOT_PASSWORD}
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            パスワードをお忘れの方
+          </Link>
+        </p>
       </div>
     </div>
   )

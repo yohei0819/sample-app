@@ -23,3 +23,19 @@ export const registerSchema = z.object({
 
 export type LoginFormValues = z.infer<typeof loginSchema>
 export type RegisterFormValues = z.infer<typeof registerSchema>
+
+// 追加 (#129): パスワードリセット要求スキーマ
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('有効なメールアドレスを入力してください'),
+})
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+
+// 追加 (#129): パスワード再設定スキーマ
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'トークンが必要です'),
+  password: z
+    .string()
+    .min(PASSWORD_MIN_LENGTH, `パスワードは${PASSWORD_MIN_LENGTH}文字以上で入力してください`)
+    .max(PASSWORD_MAX_LENGTH, `パスワードは${PASSWORD_MAX_LENGTH}文字以内で入力してください`),
+})
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>

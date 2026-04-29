@@ -67,6 +67,7 @@ model User {
   stockMovements          StockMovement[] // 追加 (#106)
   emailVerificationTokens EmailVerificationToken[] // 追加 (#120)
   auditLogs               AuditLog[] // 追加 (#121)
+  passwordResetTokens     PasswordResetToken[] // 追加 (#129)
 
   @@map("users")
 }
@@ -114,6 +115,21 @@ model EmailVerificationToken {
 
   @@index([userId])
   @@map("email_verification_tokens")
+}
+
+// 追加 (#129): パスワードリセットトークン
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  token       String    @unique
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 // ----- カテゴリ -----
