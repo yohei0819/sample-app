@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { findCouponByCode } from '@/lib/db/coupons'
 import { couponCodeSchema } from '@/lib/validators/coupon'
+import { logger } from '@/lib/logger' // 追加
 
 // POST /api/coupons/validate - クーポンコードの有効性を検証し割引率を返す
 export const POST = async (req: NextRequest) => {
@@ -44,7 +45,7 @@ export const POST = async (req: NextRequest) => {
       discountPct: coupon.discountPct,
     })
   } catch (err) {
-    console.error('[coupons/validate POST] エラー:', err)
+    logger.error('[coupons/validate POST] エラー', { err }) // 変更
     return NextResponse.json({ error: 'クーポンの確認に失敗しました', code: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }
 }

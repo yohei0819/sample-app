@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { removeProductFromWishlist, isProductInWishlist } from '@/lib/db/wishlist'
+import { logger } from '@/lib/logger' // 追加
 
 // DELETE /api/wishlist/[productId] - ウィッシュリストから商品削除（要認証）
 export const DELETE = async (
@@ -31,7 +32,7 @@ export const DELETE = async (
     await removeProductFromWishlist(userId, productId)
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('[wishlist DELETE] エラー:', err)
+    logger.error('[wishlist DELETE] エラー', { err }) // 変更
     return NextResponse.json(
       { error: 'ウィッシュリストからの削除に失敗しました', code: 'INTERNAL_SERVER_ERROR' },
       { status: 500 },
