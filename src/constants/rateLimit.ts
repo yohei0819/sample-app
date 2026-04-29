@@ -17,6 +17,8 @@ export const RATE_LIMITS = {
   SEARCH_SUGGEST: 60,
   // 追加 (#120): メール確認の再送（5分に1回）
   EMAIL_VERIFY_RESEND: 1,
+  // 追加 (#119): カート操作（API）
+  CART_OPERATION: 60,
 } as const
 
 export type RateLimitKey = keyof typeof RATE_LIMITS
