@@ -8,6 +8,7 @@ import {
   findPublicReviewsByProductId,
   findReviewByUserAndProduct,
 } from '@/lib/db/reviews'
+import { logger } from '@/lib/logger' // 追加
 
 // レビュー投稿スキーマ
 const reviewSchema = z.object({
@@ -32,7 +33,7 @@ export const GET = async (
     ])
     return NextResponse.json({ reviews, total })
   } catch (err) {
-    console.error('[reviews GET] エラー:', err)
+    logger.error('[reviews GET] エラー', { err }) // 変更
     return NextResponse.json(
       { error: 'レビューの取得に失敗しました', code: 'INTERNAL_SERVER_ERROR' },
       { status: 500 },
@@ -96,7 +97,7 @@ export const POST = async (
         { status: 409 },
       )
     }
-    console.error('[reviews POST] エラー:', err)
+    logger.error('[reviews POST] エラー', { err }) // 変更
     return NextResponse.json(
       { error: 'レビューの投稿に失敗しました', code: 'INTERNAL_SERVER_ERROR' },
       { status: 500 },

@@ -5,6 +5,7 @@ import type Stripe from 'stripe'
 import { env } from '@/env'
 import { updateOrderToPaidByStripeId } from '@/lib/db/orders'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger' // 追加
 
 // Next.js App Router では生の body 読み取りのため bodyParser を無効化
 export const dynamic = 'force-dynamic'
@@ -23,7 +24,7 @@ export const POST = async (req: NextRequest) => {
   try {
     event = stripe.webhooks.constructEvent(body, sig, env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
-    console.error('[stripe/webhook] 署名検証失敗:', err)
+    logger.error('[stripe/webhook] 署名検証失敗', { err }) // 変更
     return NextResponse.json({ error: 'Webhook 署名の検証に失敗しました' }, { status: 400 })
   }
 
@@ -43,7 +44,7 @@ export const POST = async (req: NextRequest) => {
         break
     }
   } catch (err) {
-    console.error('[stripe/webhook] イベント処理エラー:', err)
+    logger.error('[stripe/webhook] イベント処理エラー', { err }) // 変更
     return NextResponse.json({ error: 'イベント処理に失敗しました' }, { status: 500 })
   }
 

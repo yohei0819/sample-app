@@ -5,6 +5,7 @@ import { validateCartItems } from '@/lib/db/products'
 import { findCouponByCode } from '@/lib/db/coupons' // 追加
 import { stripe } from '@/lib/stripe'
 import { enforceRateLimit } from '@/lib/rateLimit'
+import { logger } from '@/lib/logger' // 追加
 
 type CartItemInput = {
   id: string
@@ -80,7 +81,7 @@ export const POST = async (req: NextRequest) => {
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : '不明なエラー'
-    console.error('[stripe/payment-intent POST] エラー:', err)
+    logger.error('[stripe/payment-intent POST] エラー', { err }) // 変更
     return NextResponse.json({ error: message, code: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }
 }

@@ -7,6 +7,7 @@ import {
   findWishlistByUserId,
   isProductInWishlist,
 } from '@/lib/db/wishlist'
+import { logger } from '@/lib/logger' // 追加
 
 // POST /api/wishlist リクエストスキーマ
 const addWishlistSchema = z.object({
@@ -28,7 +29,7 @@ export const GET = async () => {
     const items = wishlist?.items ?? []
     return NextResponse.json({ items })
   } catch (err) {
-    console.error('[wishlist GET] エラー:', err)
+    logger.error('[wishlist GET] エラー', { err }) // 変更
     return NextResponse.json(
       { error: 'ウィッシュリストの取得に失敗しました', code: 'INTERNAL_SERVER_ERROR' },
       { status: 500 },
@@ -92,7 +93,7 @@ export const POST = async (req: NextRequest) => {
     await addProductToWishlist(userId, productId)
     return NextResponse.json({ success: true }, { status: 201 })
   } catch (err) {
-    console.error('[wishlist POST] エラー:', err)
+    logger.error('[wishlist POST] エラー', { err }) // 変更
     return NextResponse.json(
       { error: 'ウィッシュリストへの追加に失敗しました', code: 'INTERNAL_SERVER_ERROR' },
       { status: 500 },

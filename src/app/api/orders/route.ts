@@ -8,6 +8,7 @@ import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 import { sendOrderConfirmationEmail } from '@/lib/email/sendOrderConfirmation' // 追加
 import { enforceRateLimit } from '@/lib/rateLimit'
+import { logger } from '@/lib/logger' // 追加
 
 type CartItemInput = {
   id: string
@@ -32,7 +33,7 @@ export const GET = async () => {
     const orders = await findOrdersByUserId(session.user.id)
     return NextResponse.json({ orders })
   } catch (err) {
-    console.error('[orders GET] エラー:', err)
+    logger.error('[orders GET] エラー', { err }) // 変更
     return NextResponse.json({ error: '注文一覧の取得に失敗しました', code: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }
 }
@@ -147,7 +148,7 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ orderId: order.id }, { status: 201 })
   } catch (err) {
     const message = err instanceof Error ? err.message : '不明なエラー'
-    console.error('[orders POST] エラー:', err)
+    logger.error('[orders POST] エラー', { err }) // 変更
     return NextResponse.json({ error: message, code: 'INTERNAL_SERVER_ERROR' }, { status: 500 })
   }
 }
