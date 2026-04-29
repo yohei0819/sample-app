@@ -23,6 +23,10 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  // 追加 (#117): 返品・返金フロー
+  RETURN_REQUESTED
+  RETURNED
+  REFUNDED
 }
 
 // 追加: メール通知テンプレート種別
@@ -183,6 +187,13 @@ model Order {
   trackingNumber String? // 追跡番号
   shippedAt      DateTime? // 発送日時（SHIPPED 遷移時に自動設定）
   deliveredAt    DateTime? // 配達完了日時（DELIVERED 遷移時に自動設定）
+
+  // 追加 (#117): 返品・返金情報
+  returnReason     String? // 顧客が入力した返品理由
+  returnRequestedAt DateTime? // 返品申請日時
+  refundedAmount   Int? // 返金額（円）
+  refundedAt       DateTime? // 返金完了日時
+  stripeRefundId   String? // Stripe Refund ID
 
   @@map("orders")
 }

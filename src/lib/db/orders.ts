@@ -98,6 +98,21 @@ export const updateOrderShipping = async (
 // クライアント・サーバー双方から prisma 依存なしで参照できるようにするため
 export { ORDER_STATUS_TRANSITIONS, canTransitionOrderStatus } from '@/constants/orders'
 
+// 追加 (#117): 返金完了情報の保存
+export const markOrderRefunded = async (
+  id: string,
+  data: { amount: number; stripeRefundId: string },
+) => {
+  return prisma.order.update({
+    where: { id },
+    data: {
+      refundedAmount: data.amount,
+      refundedAt: new Date(),
+      stripeRefundId: data.stripeRefundId,
+    },
+  })
+}
+
 // 注文件数取得（管理画面ページネーション用）
 export const countOrders = async (params: { status?: OrderStatus } = {}) => {
   const { status } = params

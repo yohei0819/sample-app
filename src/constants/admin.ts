@@ -16,6 +16,10 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   SHIPPED: '発送済',
   DELIVERED: '配達完了',
   CANCELLED: 'キャンセル',
+  // 追加 (#117): 返品・返金
+  RETURN_REQUESTED: '返品申請中',
+  RETURNED: '返品受付済',
+  REFUNDED: '返金済',
 }
 
 // 注文ステータスのバッジスタイル
@@ -25,6 +29,10 @@ export const ORDER_STATUS_CLASS: Record<string, string> = {
   SHIPPED: 'bg-indigo-100 text-indigo-800',
   DELIVERED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-red-100 text-red-800',
+  // 追加 (#117)
+  RETURN_REQUESTED: 'bg-orange-100 text-orange-800',
+  RETURNED: 'bg-amber-100 text-amber-800',
+  REFUNDED: 'bg-rose-100 text-rose-800',
 }
 
 // クーポン一覧ページのページサイズ // 追加

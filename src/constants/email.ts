@@ -6,6 +6,7 @@ export const EMAIL_SUBJECTS = {
   ORDER_CONFIRMATION: 'ご注文ありがとうございます',
   SHIPMENT_NOTIFICATION: '商品を発送しました',
   BACK_IN_STOCK: '商品が再入荷しました', // 追加: バックインストック通知
+  REFUND_NOTIFICATION: '返金が完了しました', // 追加 (#117)
 } as const
 
 // 追加: メール通知テンプレートのキー（Prisma enum と一致）
