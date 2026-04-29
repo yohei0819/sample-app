@@ -23,6 +23,9 @@ vi.mock('@/lib/email/sendOrderConfirmation', () => ({
 vi.mock('@/lib/rateLimit', () => ({
   enforceRateLimit: vi.fn().mockReturnValue(null),
 }))
+vi.mock('@/lib/emailVerificationGuard', () => ({
+  isEmailVerified: vi.fn().mockResolvedValue(true),
+}))
 
 import { GET, POST } from './route'
 import { auth } from '@/lib/auth'
