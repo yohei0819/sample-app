@@ -1,18 +1,30 @@
 // 商品カードコンポーネント
 import Link from 'next/link'
 import Image from 'next/image'
-import type { Product, Category } from '@/generated/prisma/client'
+import type { Product, Category, Sale } from '@/generated/prisma/client'
 import { WishlistButton } from '@/components/features/wishlist/WishlistButton' // 追加
+import { getEffectivePrice, isSaleActive, getDiscountPercent } from '@/lib/sale' // 追加 (#107)
 
 type Props = {
   product: Product & { category: Category | null }
   // 追加: ウィッシュリスト状態
   isWishlisted?: boolean
   isLoggedIn?: boolean
+  // 追加 (#107): 適用中のセール
+  activeSale?: Sale | null
 }
 
-export const ProductCard = ({ product, isWishlisted = false, isLoggedIn = false }: Props) => {
+export const ProductCard = ({
+  product,
+  isWishlisted = false,
+  isLoggedIn = false,
+  activeSale = null,
+}: Props) => {
   const imageUrl = product.images[0] ?? null
+  // 追加 (#107): セール価格と表示制御
+  const effectivePrice = getEffectivePrice(product, activeSale)
+  const onSale = isSaleActive(activeSale)
+  const discountPercent = getDiscountPercent(product, activeSale)
 
   return (
     <Link
@@ -43,6 +55,12 @@ export const ProductCard = ({ product, isWishlisted = false, isLoggedIn = false 
             </span>
           </div>
         )}
+        {/* 追加 (#107): セール中バッジ */}
+        {onSale && product.stock > 0 && (
+          <span className="absolute left-2 top-2 rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white shadow">
+            SALE {discountPercent}%OFF
+          </span>
+        )}
         {/* 追加: ウィッシュリストボタン（右上に絶対配置） */}
         <div className="absolute right-2 top-2">
           <WishlistButton
@@ -59,9 +77,20 @@ export const ProductCard = ({ product, isWishlisted = false, isLoggedIn = false 
           <p className="mb-1 text-xs text-gray-500">{product.category.name}</p>
         )}
         <h2 className="line-clamp-2 text-sm font-medium text-gray-900">{product.name}</h2>
-        <p className="mt-1 text-base font-bold text-gray-900">
-          ¥{product.price.toLocaleString('ja-JP')}
-        </p>
+        {onSale ? (
+          <p className="mt-1 flex items-baseline gap-2">
+            <span className="text-base font-bold text-red-600">
+              ¥{effectivePrice.toLocaleString('ja-JP')}
+            </span>
+            <span className="text-xs text-gray-500 line-through">
+              ¥{product.price.toLocaleString('ja-JP')}
+            </span>
+          </p>
+        ) : (
+          <p className="mt-1 text-base font-bold text-gray-900">
+            ¥{product.price.toLocaleString('ja-JP')}
+          </p>
+        )}
       </div>
     </Link>
   )

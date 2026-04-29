@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { validateCartItems } from '@/lib/db/products'
 import { findCouponByCode } from '@/lib/db/coupons' // 追加
+import { findActiveSalesForProducts } from '@/lib/db/sales' // 追加 (#107)
+import { getEffectivePrice } from '@/lib/sale' // 追加 (#107)
 import { stripe } from '@/lib/stripe'
 import { enforceRateLimit } from '@/lib/rateLimit'
 import { logger } from '@/lib/logger' // 追加
@@ -46,8 +48,17 @@ export const POST = async (req: NextRequest) => {
     // 各商品の最新価格・在庫を DB から取得して検証
     const productData = await validateCartItems(items)
 
-    // 合計金額（税抜小計）
-    const subtotal = productData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0)
+    // 追加 (#107): 適用中のセールを一括取得して、各商品の有効価格を再計算
+    const activeSales = await findActiveSalesForProducts(
+      productData.map(({ product }) => product.id),
+    )
+
+    // 合計金額（税抜小計） - セール価格をサーバ側で再計算（クライアント値を信用しない）
+    const subtotal = productData.reduce((sum, { product, quantity }) => {
+      const sale = activeSales.get(product.id) ?? null
+      const effective = getEffectivePrice(product, sale)
+      return sum + effective * quantity
+    }, 0)
 
     // クーポン割引計算（適用可能なクーポンのみ） // 追加
     let discountAmount = 0

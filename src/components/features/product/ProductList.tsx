@@ -1,5 +1,5 @@
 // 商品一覧グリッドコンポーネント
-import type { Product, Category } from '@/generated/prisma/client'
+import type { Product, Category, Sale } from '@/generated/prisma/client'
 import { ProductCard } from './ProductCard'
 
 type Props = {
@@ -7,9 +7,16 @@ type Props = {
   // 追加: ウィッシュリスト状態
   wishlistedProductIds?: Set<string>
   isLoggedIn?: boolean
+  // 追加 (#107): 商品ID -> 適用中セールのマップ
+  activeSales?: Map<string, Sale>
 }
 
-export const ProductList = ({ products, wishlistedProductIds, isLoggedIn = false }: Props) => {
+export const ProductList = ({
+  products,
+  wishlistedProductIds,
+  isLoggedIn = false,
+  activeSales,
+}: Props) => {
   if (products.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -24,8 +31,9 @@ export const ProductList = ({ products, wishlistedProductIds, isLoggedIn = false
         <ProductCard
           key={product.id}
           product={product}
-          isWishlisted={wishlistedProductIds?.has(product.id) ?? false} // 追加
-          isLoggedIn={isLoggedIn} // 追加
+          isWishlisted={wishlistedProductIds?.has(product.id) ?? false}
+          isLoggedIn={isLoggedIn}
+          activeSale={activeSales?.get(product.id) ?? null}
         />
       ))}
     </div>

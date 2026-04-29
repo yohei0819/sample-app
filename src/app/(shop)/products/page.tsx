@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth' // 追加
 import { findProducts } from '@/lib/db/products'
 import { findAllCategories } from '@/lib/db/categories' // 変更: DB層のリポジトリ関数を使用
 import { findWishlistedProductIds } from '@/lib/db/wishlist' // 追加
+import { findActiveSalesForProducts } from '@/lib/db/sales' // 追加 (#107)
 import { ProductList } from '@/components/features/product/ProductList'
 import { ProductSearch } from '@/components/features/product/ProductSearch'
 import { ProductSort } from '@/components/features/product/ProductSort'
@@ -83,6 +84,9 @@ export default async function ProductsPage({ searchParams }: Props) {
     userId ? findWishlistedProductIds(userId) : Promise.resolve(new Set<string>()), // 追加
   ])
 
+  // 追加 (#107): 一覧表示中商品の有効セールを一括取得
+  const activeSales = await findActiveSalesForProducts(products.map((p) => p.id))
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold text-gray-900">商品一覧</h1>
@@ -119,6 +123,7 @@ export default async function ProductsPage({ searchParams }: Props) {
         products={products}
         wishlistedProductIds={wishlistedProductIds} // 追加
         isLoggedIn={!!userId} // 追加
+        activeSales={activeSales} // 追加 (#107)
       />
     </div>
   )

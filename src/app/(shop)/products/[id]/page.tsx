@@ -8,6 +8,7 @@ import { findProductById } from '@/lib/db/products'
 import { findReviewByUserAndProduct } from '@/lib/db/reviews'
 import { getReviewStatsByProductId } from '@/lib/db/reviews' // 追加: aggregateRating用
 import { isProductInWishlist } from '@/lib/db/wishlist' // 追加
+import { findActiveSaleForProduct } from '@/lib/db/sales' // 追加 (#107)
 import { ProductDetail } from '@/components/features/product/ProductDetail'
 import { RelatedProducts } from '@/components/features/product/RelatedProducts' // 追加 (#103)
 import { RecentlyViewedProducts } from '@/components/features/product/RecentlyViewedProducts' // 追加 (#103)
@@ -125,9 +126,10 @@ export default async function ProductDetailPage({ params }: Props) {
   // ログイン状態・レビュー済み確認
   const session = await auth()
   const userId = session?.user?.id ?? null
-  const [hasReviewed, initialIsWishlisted] = await Promise.all([
+  const [hasReviewed, initialIsWishlisted, activeSale] = await Promise.all([
     userId ? !!(await findReviewByUserAndProduct(userId, product.id)) : Promise.resolve(false),
     userId ? isProductInWishlist(userId, product.id) : Promise.resolve(false),
+    findActiveSaleForProduct(product.id), // 追加 (#107)
   ])
 
   return (
@@ -146,6 +148,7 @@ export default async function ProductDetailPage({ params }: Props) {
       <ProductDetail
         product={product}
         wishlistProps={{ isLoggedIn: !!userId, initialIsWishlisted }} // 追加
+        activeSale={activeSale} // 追加 (#107)
       />
       {/* レビューセクション */}
       <div className="container mx-auto px-4 py-8 space-y-8">
