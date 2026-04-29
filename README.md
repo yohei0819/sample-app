@@ -43,6 +43,21 @@ cp .env.example .env.local
 
 <!-- TODO: 必要な環境変数を記載してください -->
 
+### Google OAuth の設定（任意）
+
+Google ログインを有効化する場合：
+
+1. [Google Cloud Console](https://console.cloud.google.com/) で OAuth クライアント ID を作成（種類: ウェブアプリケーション）
+2. 承認済みのリダイレクト URI に `${NEXTAUTH_URL}/api/auth/callback/google`（例: `http://localhost:3000/api/auth/callback/google`）を登録
+3. `.env.local` に以下を追加
+
+```env
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+未設定の場合は Google ログインボタンが表示されません（パスワード認証のみ）。同一メールアドレスのユーザーが既に存在する場合は自動的に連携されます。
+
 ## 使い方
 
 ### 開発サーバーの起動

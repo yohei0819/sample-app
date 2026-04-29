@@ -34,6 +34,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_SENTRY_DSN: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   SENTRY_ENVIRONMENT: z.string().optional(),
+
+  // 追加 (#105): Google OAuth（オプショナル：未設定時は Google ログインが無効化される）
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 })
 
 // 環境変数をパース・バリデーション
