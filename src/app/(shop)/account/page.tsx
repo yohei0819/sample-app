@@ -52,6 +52,22 @@ export default async function AccountPage() {
           </div>
         </section>
 
+        {/* 配送先アドレス帳へのリンク (#134) */}
+        <section aria-labelledby="addresses-link-heading">
+          <div className="flex items-center justify-between rounded-lg border bg-card p-6">
+            <div>
+              <h2 id="addresses-link-heading" className="font-semibold">配送先アドレス帳</h2>
+              <p className="text-sm text-muted-foreground mt-1">よく使う配送先を保存できます</p>
+            </div>
+            <Link
+              href="/account/addresses"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              管理する
+            </Link>
+          </div>
+        </section>
+
         {/* 最近の注文セクション */}
         <section aria-labelledby="recent-orders-heading">
           <div className="flex items-center justify-between mb-3">

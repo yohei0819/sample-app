@@ -7,7 +7,7 @@ import {
   useStripe,
 } from '@stripe/react-stripe-js'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { CHECKOUT_SUCCESS_PATH } from '@/constants/checkout'
@@ -26,6 +26,19 @@ const shippingSchema = z.object({
 })
 
 type ShippingFormValues = z.infer<typeof shippingSchema>
+
+// 追加 (#134): 保存済みアドレス型（API レスポンス用、最低限のフィールドのみ）
+type SavedAddress = {
+  id: string
+  name: string
+  postalCode: string
+  prefecture: string
+  city: string
+  addressLine1: string
+  addressLine2: string | null
+  phone: string
+  isDefault: boolean
+}
 
 // 適用済みクーポン型 // 追加
 type AppliedCoupon = {
@@ -52,10 +65,59 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ShippingFormValues>({
     resolver: zodResolver(shippingSchema),
   })
+
+  // 追加 (#134): 保存済みアドレスを取得し、デフォルトがあれば自動入力
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch('/api/account/addresses')
+        if (!res.ok) return
+        const json = (await res.json()) as { addresses?: SavedAddress[] }
+        if (cancelled || !json.addresses) return
+        setSavedAddresses(json.addresses)
+        const def = json.addresses.find((a) => a.isDefault)
+        if (def) {
+          setSelectedAddressId(def.id)
+          applyAddress(def)
+        }
+      } catch {
+        // 認証されていない場合などは無視
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const applyAddress = (a: SavedAddress) => {
+    // 郵便番号は登録時にハイフン許容、決済時は7桁数字必須なのでハイフン除去して入れる
+    const normalizedPostal = a.postalCode.replace(/[^\d]/g, '')
+    setValue('name', a.name, { shouldValidate: true })
+    setValue('phone', a.phone, { shouldValidate: true })
+    setValue('postalCode', normalizedPostal, { shouldValidate: true })
+    setValue('prefecture', a.prefecture, { shouldValidate: true })
+    setValue('city', a.city, { shouldValidate: true })
+    setValue('addressLine1', a.addressLine1, { shouldValidate: true })
+    setValue('addressLine2', a.addressLine2 ?? '', { shouldValidate: true })
+  }
+
+  const onSelectAddress = (id: string) => {
+    setSelectedAddressId(id)
+    if (!id) return
+    const a = savedAddresses.find((x) => x.id === id)
+    if (a) applyAddress(a)
+  }
 
   const onSubmit = async (data: ShippingFormValues) => {
     if (!stripeInstance || !elements) return
@@ -121,6 +183,31 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
         <h2 id="shipping-heading" className="mb-4 text-lg font-semibold">
           配送先情報
         </h2>
+
+        {/* 保存済みアドレスの選択 (#134) */}
+        {savedAddresses.length > 0 && (
+          <div className="mb-4 rounded-md border bg-muted/30 p-3">
+            <label htmlFor="saved-address" className="block text-sm font-medium mb-1">
+              保存済みアドレスから選択
+            </label>
+            <select
+              id="saved-address"
+              value={selectedAddressId}
+              onChange={(e) => onSelectAddress(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">選択してください</option>
+              {savedAddresses.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} - 〒{a.postalCode} {a.prefecture}
+                  {a.city}
+                  {a.isDefault ? '（デフォルト）' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="space-y-4">
           {/* お名前 */}
           <div className="space-y-1">
