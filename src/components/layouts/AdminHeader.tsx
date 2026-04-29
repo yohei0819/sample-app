@@ -77,6 +77,13 @@ export const AdminHeader = () => {
           >
             メールテンプレート
           </Link>
+          {/* 追加 (#107): タイムセール管理 */}
+          <Link
+            href="/admin/sales"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            タイムセール
+          </Link>
         </nav>
       </div>
     </header>

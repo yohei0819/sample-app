@@ -1,6 +1,8 @@
 // 商品詳細表示コンポーネント（Server Component）
 import Image from 'next/image'
+import type { Sale } from '@/generated/prisma/client'
 import type { findProductById } from '@/lib/db/products'
+import { getEffectivePrice, isSaleActive, getDiscountPercent } from '@/lib/sale'
 import { AddToCartButton } from './AddToCartButton'
 import { BackInStockForm } from './BackInStockForm' // 追加: バックインストック通知フォーム
 import { WishlistButton } from '@/components/features/wishlist/WishlistButton' // 追加
@@ -13,10 +15,16 @@ type Props = {
     isLoggedIn: boolean
     initialIsWishlisted: boolean
   }
+  // 追加 (#107): 適用中のセール
+  activeSale?: Sale | null
 }
 
-export const ProductDetail = ({ product, wishlistProps }: Props) => {
+export const ProductDetail = ({ product, wishlistProps, activeSale = null }: Props) => {
   const imageUrl = product.images[0] ?? null
+  // 追加 (#107): セール価格と表示制御
+  const effectivePrice = getEffectivePrice(product, activeSale)
+  const onSale = isSaleActive(activeSale)
+  const discountPercent = getDiscountPercent(product, activeSale)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -61,10 +69,27 @@ export const ProductDetail = ({ product, wishlistProps }: Props) => {
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{product.name}</h1>
 
           {/* 価格 */}
-          <p className="text-2xl font-bold text-gray-900">
-            ¥{product.price.toLocaleString('ja-JP')}
-            <span className="ml-1 text-sm font-normal text-gray-500">（税込）</span>
-          </p>
+          {onSale ? (
+            <div className="space-y-1">
+              <span className="inline-block rounded-md bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                SALE {discountPercent}%OFF
+              </span>
+              <p className="flex items-baseline gap-3">
+                <span className="text-2xl font-bold text-red-600 sm:text-3xl">
+                  ¥{effectivePrice.toLocaleString('ja-JP')}
+                </span>
+                <span className="text-base text-gray-500 line-through">
+                  ¥{product.price.toLocaleString('ja-JP')}
+                </span>
+                <span className="text-sm font-normal text-gray-500">（税込）</span>
+              </p>
+            </div>
+          ) : (
+            <p className="text-2xl font-bold text-gray-900">
+              ¥{product.price.toLocaleString('ja-JP')}
+              <span className="ml-1 text-sm font-normal text-gray-500">（税込）</span>
+            </p>
+          )}
 
           {/* 在庫数 */}
           <p className={`text-sm ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>

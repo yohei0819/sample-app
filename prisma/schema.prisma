@@ -99,8 +99,26 @@ model Product {
   wishlistItems            WishlistItem[]
   backInStockSubscriptions BackInStockSubscription[] // 追加: バックインストック通知購読
   stockMovements           StockMovement[] // 追加 (#106)
+  sales                    Sale[] // 追加 (#107): タイムセール
 
   @@map("products")
+}
+
+// 追加 (#107): タイムセールモデル
+model Sale {
+  id        String   @id @default(cuid())
+  productId String
+  salePrice Int // 円単位（< price）
+  startsAt  DateTime
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, startsAt, endsAt])
+  @@map("sales")
 }
 
 // 追加 (#106): 在庫変動履歴モデル

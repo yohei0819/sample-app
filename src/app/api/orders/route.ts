@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth'
 import { createOrder, findOrdersByUserId } from '@/lib/db/orders'
 import { validateCartItems } from '@/lib/db/products'
 import { findCouponByCode, incrementCouponUsedCountAtomic } from '@/lib/db/coupons' // 変更
+import { findActiveSalesForProducts } from '@/lib/db/sales' // 追加 (#107)
+import { getEffectivePrice } from '@/lib/sale' // 追加 (#107)
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 import { sendOrderConfirmationEmail } from '@/lib/email/sendOrderConfirmation' // 追加
@@ -69,8 +71,21 @@ export const POST = async (req: NextRequest) => {
     // 各商品の最新価格・在庫を DB から取得して検証
     const productData = await validateCartItems(items)
 
-    // 合計金額（税抜小計）
-    const subtotal = productData.reduce((sum, { product, quantity }) => sum + product.price * quantity, 0)
+    // 追加 (#107): セール価格をサーバ側で再計算
+    const activeSales = await findActiveSalesForProducts(
+      productData.map(({ product }) => product.id),
+    )
+    const itemsWithEffectivePrice = productData.map(({ product, quantity }) => {
+      const sale = activeSales.get(product.id) ?? null
+      const unitPrice = getEffectivePrice(product, sale)
+      return { product, quantity, unitPrice }
+    })
+
+    // 合計金額（税抜小計） - セール価格反映
+    const subtotal = itemsWithEffectivePrice.reduce(
+      (sum, { unitPrice, quantity }) => sum + unitPrice * quantity,
+      0,
+    )
 
     // クーポン検証・割引計算 // 追加
     let discountAmount = 0
@@ -120,9 +135,9 @@ export const POST = async (req: NextRequest) => {
       user: { connect: { id: session.user.id } },
       ...(couponId ? { coupon: { connect: { id: couponId } } } : {}), // 追加
       items: {
-        create: productData.map(({ product, quantity }) => ({
+        create: itemsWithEffectivePrice.map(({ product, quantity, unitPrice }) => ({
           quantity,
-          unitPrice: product.price,
+          unitPrice, // 変更 (#107): セール適用後の価格を保存
           product: { connect: { id: product.id } },
         })),
       },

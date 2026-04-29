@@ -14,6 +14,9 @@ vi.mock('@/lib/db/coupons', () => ({
   findCouponByCode: vi.fn(),
   incrementCouponUsedCountAtomic: vi.fn(),
 }))
+vi.mock('@/lib/db/sales', () => ({
+  findActiveSalesForProducts: vi.fn().mockResolvedValue(new Map()),
+}))
 vi.mock('@/lib/email/sendOrderConfirmation', () => ({
   sendOrderConfirmationEmail: vi.fn().mockResolvedValue(undefined),
 }))
