@@ -1,6 +1,7 @@
 // 追加 (#107): タイムセール管理 API（一覧・作成）
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { AuditAction, recordAuditLog } from '@/lib/audit' // 追加 (#121)
 import {
   createSale,
   findAllSales,
@@ -66,6 +67,14 @@ export const POST = async (req: NextRequest) => {
     }
 
     const sale = await createSale({ productId, salePrice, startsAt, endsAt, isActive })
+    // 追加 (#121): 監査ログ記録
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: AuditAction.SALE_CREATE,
+      targetType: 'Sale',
+      targetId: sale.id,
+      metadata: { productId, salePrice, startsAt, endsAt, isActive },
+    })
     return NextResponse.json({ sale }, { status: 201 })
   } catch (err) {
     console.error('[admin/sales POST] エラー:', err)

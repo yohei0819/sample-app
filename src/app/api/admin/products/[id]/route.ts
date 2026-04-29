@@ -1,6 +1,7 @@
 // 管理画面 商品更新・削除 API
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { AuditAction, buildDiff, recordAuditLog } from '@/lib/audit' // 追加 (#121)
 import { deleteProduct, findProductByIdForAdmin, updateProduct } from '@/lib/db/products'
 import { productSchema } from '@/lib/validators/product'
 // 追加: 在庫が 0→1 以上に増加した際の自動再入荷通知 (#76)
@@ -82,6 +83,18 @@ export const PUT = async (
         images: product.images,
       })
     }
+    // 追加 (#121): 監査ログ記録（変更前後の差分）
+    const diff = buildDiff(
+      { name: existing.name, price: existing.price, stock: existing.stock, isPublished: existing.isPublished },
+      { name: product.name, price: product.price, stock: product.stock, isPublished: product.isPublished },
+    )
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: existing.stock !== product.stock ? AuditAction.STOCK_ADJUST : AuditAction.PRODUCT_UPDATE,
+      targetType: 'Product',
+      targetId: product.id,
+      metadata: { before: diff.before, after: diff.after },
+    })
     return NextResponse.json({ product })
   } catch (err) {
     console.error('[admin/products PUT] エラー:', err)
@@ -107,6 +120,14 @@ export const DELETE = async (
 
   try {
     await deleteProduct(id)
+    // 追加 (#121): 監査ログ記録
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: AuditAction.PRODUCT_DELETE,
+      targetType: 'Product',
+      targetId: id,
+      metadata: { name: existing.name },
+    })
     return NextResponse.json({ message: '商品を削除しました' })
   } catch (err) {
     console.error('[admin/products DELETE] エラー:', err)

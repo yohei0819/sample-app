@@ -1,6 +1,7 @@
 // 管理画面 商品一覧・作成 API
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { AuditAction, recordAuditLog } from '@/lib/audit' // 追加 (#121)
 import { findAllCategories } from '@/lib/db/categories'
 import { createProduct, findAllProductsForAdmin } from '@/lib/db/products'
 import { productSchema } from '@/lib/validators/product'
@@ -53,6 +54,14 @@ export const POST = async (req: NextRequest) => {
       images,
       ...(lowStockThreshold !== undefined ? { lowStockThreshold } : {}),
       ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
+    })
+    // 追加 (#121): 監査ログ記録
+    await recordAuditLog({
+      actorId: check.session.user.id,
+      action: AuditAction.PRODUCT_CREATE,
+      targetType: 'Product',
+      targetId: product.id,
+      metadata: { name, price, stock, categoryId, isPublished },
     })
     return NextResponse.json({ product }, { status: 201 })
   } catch (err) {

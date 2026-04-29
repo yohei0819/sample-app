@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAdmin } from '@/lib/admin-auth'
+import { AuditAction, recordAuditLog } from '@/lib/audit' // 追加 (#121)
 import {
   findUserById,
   updateUserRole,
@@ -87,6 +88,16 @@ export const PATCH = async (req: NextRequest, { params }: RouteParams) => {
   try {
     if (role !== undefined) {
       await updateUserRole(id, role)
+      // 追加 (#121): 監査ログ記録（ロール変更）
+      if (existing.role !== role) {
+        await recordAuditLog({
+          actorId: check.session.user.id,
+          action: AuditAction.USER_ROLE_CHANGE,
+          targetType: 'User',
+          targetId: id,
+          metadata: { from: existing.role, to: role },
+        })
+      }
     }
     if (isActive !== undefined) {
       await updateUserActiveStatus(id, isActive)
