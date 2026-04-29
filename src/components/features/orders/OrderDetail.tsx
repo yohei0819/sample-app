@@ -7,6 +7,7 @@ import type { ShippingAddress } from '@/constants/checkout'
 import { OrderStatusBadge } from '@/components/features/orders/OrderStatusBadge'
 import { OrderTimeline } from '@/components/features/orders/OrderTimeline' // 追加 (#118)
 import { ReturnRequestButton } from '@/components/features/orders/ReturnRequestButton' // 追加 (#117)
+import { CancelOrderButton } from '@/components/features/orders/CancelOrderButton' // 追加 (#130)
 
 type OrderItemWithProduct = OrderItem & { product: Product }
 type OrderWithItems = Order & { items: OrderItemWithProduct[] }
@@ -34,6 +35,9 @@ export const OrderDetail = ({ order }: Props) => {
   // 返品申請可能かどうか（#117）: PAID/SHIPPED/DELIVERED のみ
   const canRequestReturn =
     order.status === 'PAID' || order.status === 'SHIPPED' || order.status === 'DELIVERED'
+
+  // 追加 (#130): 顧客側キャンセル可能かどうか - PENDING/PAID のみ
+  const canCancel = order.status === 'PENDING' || order.status === 'PAID'
 
   return (
     <div className="space-y-6">
@@ -179,6 +183,16 @@ export const OrderDetail = ({ order }: Props) => {
             返品申請
           </h2>
           <ReturnRequestButton orderId={order.id} />
+        </section>
+      )}
+
+      {/* 注文キャンセルボタン (#130) */}
+      {canCancel && (
+        <section aria-labelledby="order-cancel-action-heading">
+          <h2 id="order-cancel-action-heading" className="sr-only">
+            注文キャンセル
+          </h2>
+          <CancelOrderButton orderId={order.id} isPaid={order.status === 'PAID'} />
         </section>
       )}
     </div>
