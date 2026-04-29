@@ -42,7 +42,9 @@ export const PATCH = async (req: NextRequest) => {
 
     // 各商品の在庫を更新
     await Promise.all(
-      parsed.data.items.map(({ id, stock }) => updateProduct(id, { stock }))
+      parsed.data.items.map(({ id, stock }) =>
+        updateProduct(id, { stock }, { userId: check.session.user.id }), // 変更 (#106)
+      ),
     )
 
     return NextResponse.json({ success: true })

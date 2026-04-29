@@ -45,6 +45,7 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
       categoryId: '',
       isPublished: true,
       images: [],
+      lowStockThreshold: 3,
       ...defaultValues,
     },
   })
@@ -145,6 +146,27 @@ export const ProductForm = ({ defaultValues, productId, categories }: Props) => 
             <p id="stock-error" role="alert" className="text-xs text-red-500">{errors.stock.message}</p>
           )}
         </div>
+      </div>
+
+      {/* 追加 (#106): 在庫アラート閾値 */}
+      <div className="space-y-1">
+        <label htmlFor="lowStockThreshold" className="block text-sm font-medium">
+          在庫アラート閾値
+        </label>
+        <input
+          id="lowStockThreshold"
+          type="number"
+          min={0}
+          {...register('lowStockThreshold', { valueAsNumber: true })}
+          className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-describedby="lowStockThreshold-help"
+        />
+        <p id="lowStockThreshold-help" className="text-xs text-muted-foreground">
+          在庫数がこの値以下になるとダッシュボードに警告を表示します（既定値: 3）
+        </p>
+        {errors.lowStockThreshold && (
+          <p role="alert" className="text-xs text-red-500">{errors.lowStockThreshold.message}</p>
+        )}
       </div>
 
       {/* カテゴリ */}

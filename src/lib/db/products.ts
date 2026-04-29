@@ -83,8 +83,29 @@ export const createProduct = async (data: Prisma.ProductCreateInput) => {
 }
 
 // 商品更新（管理画面用）
-export const updateProduct = async (id: string, data: Prisma.ProductUpdateInput) => {
-  return prisma.product.update({ where: { id }, data })
+// 変更 (#106): 在庫が変動した場合は StockMovement(ADJUST) を同一トランザクションで記録
+export const updateProduct = async (
+  id: string,
+  data: Prisma.ProductUpdateInput,
+  options?: { userId?: string | null },
+) => {
+  return prisma.$transaction(async (tx) => {
+    const before = await tx.product.findUnique({ where: { id }, select: { stock: true } })
+    const updated = await tx.product.update({ where: { id }, data })
+    if (before && before.stock !== updated.stock) {
+      const diff = updated.stock - before.stock
+      await tx.stockMovement.create({
+        data: {
+          productId: id,
+          type: 'ADJUST',
+          quantity: diff,
+          reason: '管理画面からの在庫調整',
+          userId: options?.userId ?? null,
+        },
+      })
+    }
+    return updated
+  })
 }
 
 // 商品削除（管理画面用）
@@ -93,14 +114,30 @@ export const deleteProduct = async (id: string): Promise<Product> => {
 }
 
 // 在庫を減らす（注文確定時） - アトミックな updateMany でTOCTOU競合を防ぐ
-export const decrementStock = async (id: string, quantity: number): Promise<void> => {
-  const result = await prisma.product.updateMany({
-    where: { id, stock: { gte: quantity } },
-    data: { stock: { decrement: quantity } },
+// 変更 (#106): 在庫減少を StockMovement(OUT) として履歴に残す
+export const decrementStock = async (
+  id: string,
+  quantity: number,
+  options?: { reason?: string; userId?: string | null },
+): Promise<void> => {
+  await prisma.$transaction(async (tx) => {
+    const result = await tx.product.updateMany({
+      where: { id, stock: { gte: quantity } },
+      data: { stock: { decrement: quantity } },
+    })
+    if (result.count === 0) {
+      throw new Error('在庫が不足しています')
+    }
+    await tx.stockMovement.create({
+      data: {
+        productId: id,
+        type: 'OUT',
+        quantity: -quantity,
+        reason: options?.reason ?? '注文による出庫',
+        userId: options?.userId ?? null,
+      },
+    })
   })
-  if (result.count === 0) {
-    throw new Error('在庫が不足しています') // 変更
-  }
 }
 
 // 追加: 管理画面用商品一覧取得（非公開商品も含む）
