@@ -11,11 +11,13 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 type Props = {
-  params: { id: string }
+  // 変更: Next.js 15 の非同期 params
+  params: Promise<{ id: string }>
 }
 
 const Image = async ({ params }: Props) => {
-  const product = await findProductById(params.id)
+  const { id } = await params // 変更
+  const product = await findProductById(id)
 
   const name = product?.name ?? '商品'
   const price = product ? `¥${product.price.toLocaleString()}` : ''

@@ -36,14 +36,15 @@ const notifyBackInStockSubscribers = async (product: {
 // PUT /api/admin/products/[id] - 商品更新
 export const PUT = async (
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 変更: Next.js 15 の非同期 params
 ) => {
   const check = await requireAdmin()
   if ('error' in check) {
     return NextResponse.json({ error: check.error, code: 'FORBIDDEN' }, { status: check.status })
   }
 
-  const existing = await findProductByIdForAdmin(params.id)
+  const { id } = await params // 変更
+  const existing = await findProductByIdForAdmin(id)
   if (!existing) {
     return NextResponse.json({ error: '商品が見つかりません', code: 'NOT_FOUND' }, { status: 404 })
   }
@@ -56,7 +57,7 @@ export const PUT = async (
     }
 
     const { name, description, price, stock, categoryId, isPublished, images } = parsed.data
-    const product = await updateProduct(params.id, {
+    const product = await updateProduct(id, { // 変更
       name,
       description,
       price,
@@ -87,20 +88,21 @@ export const PUT = async (
 // DELETE /api/admin/products/[id] - 商品削除
 export const DELETE = async (
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> } // 変更: Next.js 15 の非同期 params
 ) => {
   const check = await requireAdmin()
   if ('error' in check) {
     return NextResponse.json({ error: check.error, code: 'FORBIDDEN' }, { status: check.status })
   }
 
-  const existing = await findProductByIdForAdmin(params.id)
+  const { id } = await params // 変更
+  const existing = await findProductByIdForAdmin(id)
   if (!existing) {
     return NextResponse.json({ error: '商品が見つかりません', code: 'NOT_FOUND' }, { status: 404 })
   }
 
   try {
-    await deleteProduct(params.id)
+    await deleteProduct(id)
     return NextResponse.json({ message: '商品を削除しました' })
   } catch (err) {
     console.error('[admin/products DELETE] エラー:', err)

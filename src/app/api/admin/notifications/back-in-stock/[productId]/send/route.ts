@@ -9,7 +9,8 @@ import {
 import { sendBackInStockNotificationEmail } from '@/lib/email/sendBackInStockNotification'
 
 type RouteContext = {
-  params: { productId: string }
+  // 変更: Next.js 15 の非同期 params
+  params: Promise<{ productId: string }>
 }
 
 // POST /api/admin/notifications/back-in-stock/[productId]/send
@@ -23,7 +24,7 @@ export const POST = async (_req: Request, context: RouteContext) => {
     )
   }
 
-  const { productId } = context.params
+  const { productId } = await context.params // 変更
   if (!productId) {
     return NextResponse.json(
       { error: '商品IDは必須です', code: 'BAD_REQUEST' },

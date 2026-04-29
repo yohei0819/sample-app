@@ -4,7 +4,8 @@ import { auth } from '@/lib/auth'
 import { findOrderById } from '@/lib/db/orders'
 
 type RouteParams = {
-  params: { id: string }
+  // 変更: Next.js 15 の非同期 params
+  params: Promise<{ id: string }>
 }
 
 // GET /api/orders/:id
@@ -15,7 +16,8 @@ export const GET = async (_req: NextRequest, { params }: RouteParams) => {
   }
 
   try {
-    const order = await findOrderById(params.id)
+    const { id } = await params // 変更
+    const order = await findOrderById(id)
 
     if (!order) {
       return NextResponse.json({ error: '注文が見つかりません', code: 'NOT_FOUND' }, { status: 404 })

@@ -6,11 +6,13 @@ import { findOrderById } from '@/lib/db/orders'
 import { OrderDetail } from '@/components/features/orders/OrderDetail'
 
 type Props = {
-  params: { id: string }
+  // 変更: Next.js 15 の非同期 params
+  params: Promise<{ id: string }>
 }
 
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
-  return { title: `注文詳細 #${params.id.slice(0, 8)}` }
+  const { id } = await params // 変更
+  return { title: `注文詳細 #${id.slice(0, 8)}` }
 }
 
 export default async function OrderDetailPage({ params }: Props) {
@@ -19,7 +21,8 @@ export default async function OrderDetailPage({ params }: Props) {
     redirect('/login?redirect=/orders')
   }
 
-  const order = await findOrderById(params.id)
+  const { id } = await params // 変更
+  const order = await findOrderById(id)
 
   // 注文が存在しない、または本人のものでない場合は404（OWASP A01対策）
   if (!order || order.userId !== session.user.id) {

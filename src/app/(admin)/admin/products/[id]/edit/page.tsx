@@ -14,12 +14,14 @@ export const metadata = {
 }
 
 type Props = {
-  params: { id: string }
+  // 変更: Next.js 15 の非同期 params
+  params: Promise<{ id: string }>
 }
 
 export default async function AdminProductEditPage({ params }: Props) {
+  const { id } = await params // 変更
   const [product, categories] = await Promise.all([
-    findProductByIdForAdmin(params.id),
+    findProductByIdForAdmin(id),
     findAllCategories(),
   ])
 
