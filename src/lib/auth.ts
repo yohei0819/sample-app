@@ -4,8 +4,9 @@ import 'server-only'
 import bcrypt from 'bcryptjs'
 import NextAuth, { type DefaultSession } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google' // 追加 (#105)
 import { env } from '@/env'
-import { findUserByEmail } from '@/lib/db/users'
+import { findUserByEmail, createUser } from '@/lib/db/users' // 変更 (#105): createUser 追加
 
 // Session 型拡張：id・role フィールドを追加
 declare module 'next-auth' {
@@ -34,6 +35,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // 変更: 開発環境のみ trustHost を有効化し本番では無効化
   trustHost: env.NODE_ENV !== 'production',
   providers: [
+    // 追加 (#105): Google OAuth プロバイダー（環境変数が設定されている時のみ有効）
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? [
+          Google({
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     Credentials({
       credentials: {
         email: { label: 'メールアドレス', type: 'email' },
@@ -68,6 +78,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    // 追加 (#105): Google OAuth で初回ログイン時にユーザーを自動作成・既存ユーザーは email で連携
+    async signIn({ user, account }) {
+      if (account?.provider !== 'google') return true
+      if (!user.email) return false
+
+      const existing = await findUserByEmail(user.email)
+      if (existing) {
+        // 既存ユーザーが無効化されている場合はログイン拒否
+        if (existing.isActive === false) return false
+        // 既存ユーザーの id/role を user オブジェクトに反映（jwt callback へ伝播）
+        user.id = existing.id
+        user.role = existing.role
+        return true
+      }
+
+      // 新規 Google ユーザー：パスワードなしで作成
+      const created = await createUser({
+        email: user.email,
+        name: user.name ?? null,
+        // passwordHash 未設定（Google 認証専用）
+      })
+      user.id = created.id
+      user.role = created.role
+      return true
+    },
     // JWT にユーザー情報を追加
     jwt({ token, user }) {
       const t = token as JwtToken
