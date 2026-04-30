@@ -69,6 +69,7 @@ model User {
   auditLogs               AuditLog[] // 追加 (#121)
   passwordResetTokens     PasswordResetToken[] // 追加 (#129)
   addresses               Address[] // 追加 (#134)
+  reviewVotes             ReviewVote[] // 追加 (#132)
 
   @@map("users")
 }
@@ -334,6 +335,7 @@ model Review {
   id        String   @id @default(cuid())
   rating    Int // 1〜5
   comment   String?
+  images    String[] @default([]) // 追加 (#132): レビュー画像URL（最大3枚）
   isPublic  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -343,8 +345,31 @@ model Review {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
+  votes     ReviewVote[] // 追加 (#132)
+
   @@unique([userId, productId])
   @@map("reviews")
+}
+
+// 追加 (#132): レビュー有用性投票の値
+enum ReviewVoteValue {
+  HELPFUL
+}
+
+// 追加 (#132): レビュー有用性投票
+model ReviewVote {
+  id        String          @id @default(cuid())
+  reviewId  String
+  userId    String
+  value     ReviewVoteValue @default(HELPFUL)
+  createdAt DateTime        @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@map("review_votes")
 }
 
 // ----- ウィッシュリスト -----

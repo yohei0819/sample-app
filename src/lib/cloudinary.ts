@@ -11,8 +11,10 @@ cloudinary.config({
   secure: true,
 })
 
-// 追加: アップロードフォルダ名（環境ごとに分ける場合はここで切替可能）
+// 追加: アップロード先フォルダ（用途別）
 const UPLOAD_FOLDER = 'sample-app/products'
+const REVIEW_UPLOAD_FOLDER = 'sample-app/reviews' // 追加 (#132)
+export const REVIEW_IMAGE_FOLDER = REVIEW_UPLOAD_FOLDER // 追加 (#132): 外部公開用
 
 // 追加: アップロード結果の型（必要なフィールドのみ）
 export type CloudinaryUploadResult = {
@@ -28,11 +30,12 @@ export type CloudinaryUploadResult = {
 export const uploadImageBuffer = async (
   buffer: Buffer,
   filename?: string,
+  folder: string = UPLOAD_FOLDER,
 ): Promise<CloudinaryUploadResult> => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
-        folder: UPLOAD_FOLDER,
+        folder,
         resource_type: 'image',
         // 既定は自動フォーマット最適化（webp/avif等を自動選択）
         format: undefined,

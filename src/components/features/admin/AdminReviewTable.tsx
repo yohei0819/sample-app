@@ -1,10 +1,11 @@
 'use client'
 // 管理画面 レビュー一覧テーブルコンポーネント
-import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import Image from 'next/image' // 追加 (#132)
 import Link from 'next/link'
-import { ADMIN_REVIEW_PAGE_SIZE } from '@/constants/admin'
+import { useRouter } from 'next/navigation'
 import { StarRating } from '@/components/features/review/StarRating'
+import { ADMIN_REVIEW_PAGE_SIZE } from '@/constants/admin'
 import type { AdminReview } from '@/lib/db/reviews'
 
 type Props = {
@@ -97,6 +98,7 @@ export const AdminReviewTable = ({ reviews, total, currentPage, currentFilter }:
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">投稿者</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">評価</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">コメント</th>
+                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">画像</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">投稿日</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">状態</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">操作</th>
@@ -116,6 +118,26 @@ export const AdminReviewTable = ({ reviews, total, currentPage, currentFilter }:
                       </td>
                       <td className="px-4 py-3 max-w-[200px] truncate text-muted-foreground">
                         {review.comment ?? '—'}
+                      </td>
+                      {/* 追加 (#132): 画像サムネイル（公開状態は isPublic で一括管理） */}
+                      <td className="px-4 py-3">
+                        {review.images && review.images.length > 0 ? (
+                          <div className="flex gap-1">
+                            {review.images.slice(0, 3).map((url) => (
+                              <div key={url} className="relative h-10 w-10 overflow-hidden rounded">
+                                <Image
+                                  src={url}
+                                  alt="レビュー画像"
+                                  fill
+                                  sizes="40px"
+                                  className="object-cover"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
                         {new Date(review.createdAt).toLocaleDateString('ja-JP')}

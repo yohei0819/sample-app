@@ -1,15 +1,18 @@
 'use client'
 // レビュー投稿フォーム（Client Component）
-import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { MAX_REVIEW_IMAGES } from '@/constants/reviews'
+import { ReviewImageUploader } from './ReviewImageUploader'
 import { StarRating } from './StarRating'
 
+// 追加 (#132): 画像配列フィールドを含むフォームスキーマ
 const reviewFormSchema = z.object({
   rating: z
     .number()
@@ -17,6 +20,9 @@ const reviewFormSchema = z.object({
     .min(1, '評価を選択してください')
     .max(5),
   comment: z.string().max(1000, 'コメントは1000文字以内で入力してください').optional(),
+  images: z
+    .array(z.string().url())
+    .max(MAX_REVIEW_IMAGES, `画像は最大${MAX_REVIEW_IMAGES}枚まで添付できます`),
 })
 
 type ReviewFormValues = z.infer<typeof reviewFormSchema>
@@ -39,7 +45,7 @@ export const ReviewForm = ({ productId, isLoggedIn, hasReviewed }: Props) => {
     formState: { errors, isSubmitting },
   } = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewFormSchema),
-    defaultValues: { rating: 0, comment: '' },
+    defaultValues: { rating: 0, comment: '', images: [] }, // 変更 (#132)
   })
 
   if (!isLoggedIn) {
@@ -69,7 +75,11 @@ export const ReviewForm = ({ productId, isLoggedIn, hasReviewed }: Props) => {
       const res = await fetch(`/api/reviews/${productId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating: data.rating, comment: data.comment || undefined }),
+        body: JSON.stringify({
+          rating: data.rating,
+          comment: data.comment || undefined,
+          images: data.images, // 追加 (#132)
+        }),
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
@@ -112,6 +122,24 @@ export const ReviewForm = ({ productId, isLoggedIn, hasReviewed }: Props) => {
           </p>
         )}
       </div>
+
+      {/* 画像アップロード（追加 #132） */}
+      <Controller
+        name="images"
+        control={control}
+        render={({ field }) => (
+          <ReviewImageUploader
+            value={field.value ?? []}
+            onChange={field.onChange}
+            disabled={isSubmitting}
+          />
+        )}
+      />
+      {errors.images && (
+        <p className="text-sm text-destructive" role="alert">
+          {errors.images.message}
+        </p>
+      )}
 
       {/* コメント */}
       <div className="space-y-1">
