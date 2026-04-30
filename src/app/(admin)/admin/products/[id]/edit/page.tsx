@@ -3,9 +3,11 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { ProductForm } from '@/components/features/admin/ProductForm'
+import { ProductVariantsTab } from '@/components/features/admin/ProductVariantsTab' // 追加 (#131)
 import { StockMovementTimeline } from '@/components/features/admin/StockMovementTimeline'
 import { findProductByIdForAdmin } from '@/lib/db/products'
 import { findAllCategories } from '@/lib/db/categories'
+import { findVariantsByProductId } from '@/lib/db/productVariants' // 追加 (#131)
 
 // 追加: 管理画面はDB必須のため動的レンダリングを強制
 export const dynamic = 'force-dynamic'
@@ -21,9 +23,10 @@ type Props = {
 
 export default async function AdminProductEditPage({ params }: Props) {
   const { id } = await params // 変更
-  const [product, categories] = await Promise.all([
+  const [product, categories, variants] = await Promise.all([
     findProductByIdForAdmin(id),
     findAllCategories(),
+    findVariantsByProductId(id), // 追加 (#131)
   ])
 
   if (!product) {
@@ -58,6 +61,11 @@ export default async function AdminProductEditPage({ params }: Props) {
             lowStockThreshold: product.lowStockThreshold,
           }}
         />
+      </div>
+
+      {/* 追加 (#131): バリエーション CRUD */}
+      <div className="rounded-lg border bg-card p-6 shadow-sm">
+        <ProductVariantsTab productId={product.id} initialVariants={variants} />
       </div>
 
       {/* 追加 (#106): 在庫変動履歴タイムライン */}

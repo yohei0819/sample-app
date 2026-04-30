@@ -3,8 +3,9 @@ import Image from 'next/image'
 import type { Sale } from '@/generated/prisma/client'
 import type { findProductById } from '@/lib/db/products'
 import { getEffectivePrice, isSaleActive, getDiscountPercent } from '@/lib/sale'
-import { AddToCartButton } from './AddToCartButton'
 import { BackInStockForm } from './BackInStockForm' // 追加: バックインストック通知フォーム
+import { ProductPurchasePanel } from './ProductPurchasePanel' // 変更 (#131): variant 対応のカート追加パネル
+import type { VariantOption } from './ProductVariantSelector' // 追加 (#131)
 import { WishlistButton } from '@/components/features/wishlist/WishlistButton' // 追加
 
 // 変更: ReturnTypeベースの型定義でスキーマ変更に対応
@@ -25,6 +26,25 @@ export const ProductDetail = ({ product, wishlistProps, activeSale = null }: Pro
   const effectivePrice = getEffectivePrice(product, activeSale)
   const onSale = isSaleActive(activeSale)
   const discountPercent = getDiscountPercent(product, activeSale)
+
+  // 追加 (#131): バリエーション一覧を Client Component 用の形に正規化
+  const variantOptions: VariantOption[] = product.variants.map((v) => ({
+    id: v.id,
+    sku: v.sku,
+    // attributes は Json なので Record<string, string> に絞り込み（不正な値は除外）
+    attributes: Object.fromEntries(
+      Object.entries((v.attributes ?? {}) as Record<string, unknown>).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string',
+      ),
+    ),
+    priceDelta: v.priceDelta,
+    stock: v.stock,
+  }))
+  const hasVariants = variantOptions.length > 0
+  // バリエーションあり商品は variants の合計在庫で「在庫切れ」表示を判定する
+  const displayStock = hasVariants
+    ? variantOptions.reduce((sum, v) => sum + v.stock, 0)
+    : product.stock
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -48,7 +68,7 @@ export const ProductDetail = ({ product, wishlistProps, activeSale = null }: Pro
               </div>
             )}
             {/* 在庫切れオーバーレイ */}
-            {product.stock === 0 && (
+            {displayStock === 0 && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                 <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-800">
                   在庫切れ
@@ -92,8 +112,14 @@ export const ProductDetail = ({ product, wishlistProps, activeSale = null }: Pro
           )}
 
           {/* 在庫数 */}
-          <p className={`text-sm ${product.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {product.stock > 0 ? `在庫あり（残り${product.stock}点）` : '在庫切れ'}
+          <p className={`text-sm ${displayStock > 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {hasVariants
+              ? displayStock > 0
+                ? `在庫あり（合計${displayStock}点）`
+                : '在庫切れ'
+              : displayStock > 0
+                ? `在庫あり（残り${displayStock}点）`
+                : '在庫切れ'}
           </p>
 
           {/* 商品説明 */}
@@ -107,9 +133,16 @@ export const ProductDetail = ({ product, wishlistProps, activeSale = null }: Pro
           )}
 
           {/* カートに追加・ウィッシュリストボタン */}
-          <div className="mt-auto flex items-center gap-3 pt-4">
+          <div className="mt-auto flex items-start gap-3 pt-4">
             <div className="flex-1">
-              <AddToCartButton productId={product.id} stock={product.stock} />
+              <ProductPurchasePanel
+                productId={product.id}
+                productName={product.name}
+                productPrice={product.price}
+                productImageUrl={imageUrl}
+                productStock={product.stock}
+                variants={variantOptions}
+              />
             </div>
             {/* 追加: ウィッシュリストボタン */}
             <WishlistButton
@@ -120,7 +153,7 @@ export const ProductDetail = ({ product, wishlistProps, activeSale = null }: Pro
           </div>
 
           {/* 追加: 在庫切れ時のみバックインストック通知購読フォームを表示 */}
-          {product.stock === 0 && (
+          {displayStock === 0 && (
             <div className="pt-2">
               <BackInStockForm productId={product.id} />
             </div>
