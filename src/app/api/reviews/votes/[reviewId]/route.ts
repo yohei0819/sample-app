@@ -1,4 +1,7 @@
 // 追加 (#132): レビュー有用性投票 API
+// パス: POST/DELETE /api/reviews/votes/[reviewId]
+// 補足: ルートは `/api/reviews/[productId]` と衝突させないため `votes/` セグメントを挟んでいる
+//       （Next.js の動的セグメントは同階層で名前を変えられないため、別パスに切り出している）
 // POST   : 投票を追加（同一ユーザーが投票済みなら 409、自分のレビューには 403）
 // DELETE : 投票を取り消し
 import { NextRequest, NextResponse } from 'next/server'
@@ -14,7 +17,7 @@ import {
 import { logger } from '@/lib/logger'
 import { enforceRateLimit } from '@/lib/rateLimit'
 
-// POST /api/reviews/[reviewId]/vote - 投票
+// POST /api/reviews/votes/[reviewId] - 投票
 export const POST = async (
   req: NextRequest,
   { params }: { params: Promise<{ reviewId: string }> },
@@ -68,7 +71,7 @@ export const POST = async (
   }
 }
 
-// DELETE /api/reviews/[reviewId]/vote - 投票取り消し
+// DELETE /api/reviews/votes/[reviewId] - 投票取り消し
 export const DELETE = async (
   req: NextRequest,
   { params }: { params: Promise<{ reviewId: string }> },

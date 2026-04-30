@@ -10,6 +10,7 @@ import {
   findVotedReviewIdsByUser,
 } from '@/lib/db/reviews'
 import { logger } from '@/lib/logger'
+import { enforceRateLimit } from '@/lib/rateLimit'
 import { reviewInputSchema } from '@/lib/validators/review'
 
 // GET /api/reviews/[productId] - 公開レビュー一覧取得
@@ -59,6 +60,10 @@ export const POST = async (
   req: NextRequest,
   { params }: { params: Promise<{ productId: string }> },
 ) => {
+  // 追加 (#132): レビュー投稿のレート制限（連投・スパム対策、IP 単位）
+  const limited = enforceRateLimit('REVIEW_POST', req)
+  if (limited) return limited
+
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json(

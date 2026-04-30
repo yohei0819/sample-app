@@ -27,6 +27,8 @@ export const RATE_LIMITS = {
   REVIEW_IMAGE_UPLOAD: 10,
   // 追加 (#132): レビュー有用性投票
   REVIEW_VOTE: 30,
+  // 追加 (#132): レビュー投稿（連投・スパム対策）
+  REVIEW_POST: 5,
 } as const
 
 export type RateLimitKey = keyof typeof RATE_LIMITS

@@ -50,15 +50,15 @@ model EmailTemplate {
 
 // ----- ユーザー -----
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String?
-  passwordHash String?
-  role         Role     @default(USER)
-  isActive     Boolean  @default(true) // 追加: 有効/無効フラグ
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  passwordHash    String?
+  role            Role      @default(USER)
+  isActive        Boolean   @default(true) // 追加: 有効/無効フラグ
   emailVerifiedAt DateTime? // 追加 (#120): メールアドレス確認日時
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   orders                  Order[]
   cart                    Cart?
@@ -121,12 +121,12 @@ model EmailVerificationToken {
 
 // 追加 (#129): パスワードリセットトークン
 model PasswordResetToken {
-  id          String    @id @default(cuid())
-  userId      String
-  token       String    @unique
-  expiresAt   DateTime
-  consumedAt  DateTime?
-  createdAt   DateTime  @default(now())
+  id         String    @id @default(cuid())
+  userId     String
+  token      String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -136,18 +136,18 @@ model PasswordResetToken {
 
 // 追加 (#134): 配送先アドレス帳
 model Address {
-  id            String   @id @default(cuid())
-  userId        String
-  name          String
-  postalCode    String
-  prefecture    String
-  city          String
-  addressLine1  String
-  addressLine2  String?
-  phone         String
-  isDefault     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  postalCode   String
+  prefecture   String
+  city         String
+  addressLine1 String
+  addressLine2 String?
+  phone        String
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -276,11 +276,11 @@ model Order {
   deliveredAt    DateTime? // 配達完了日時（DELIVERED 遷移時に自動設定）
 
   // 追加 (#117): 返品・返金情報
-  returnReason     String? // 顧客が入力した返品理由
+  returnReason      String? // 顧客が入力した返品理由
   returnRequestedAt DateTime? // 返品申請日時
-  refundedAmount   Int? // 返金額（円）
-  refundedAt       DateTime? // 返金完了日時
-  stripeRefundId   String? // Stripe Refund ID
+  refundedAmount    Int? // 返金額（円）
+  refundedAt        DateTime? // 返金完了日時
+  stripeRefundId    String? // Stripe Refund ID
 
   @@map("orders")
 }
@@ -345,7 +345,7 @@ model Review {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  votes     ReviewVote[] // 追加 (#132)
+  votes ReviewVote[] // 追加 (#132)
 
   @@unique([userId, productId])
   @@map("reviews")
@@ -367,8 +367,9 @@ model ReviewVote {
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // 注: @@unique([reviewId, userId]) により reviewId 先頭の複合インデックスが自動生成されるため、
+  //     reviewId 単独の @@index は冗長となり付与しない（クエリは複合インデックスの先頭列で利用される）
   @@unique([reviewId, userId])
-  @@index([reviewId])
   @@map("review_votes")
 }
 
