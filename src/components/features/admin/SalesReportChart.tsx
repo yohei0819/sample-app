@@ -34,7 +34,9 @@ const buildYTicks = (max: number): number[] => {
   return Y_TICK_RATIOS.map((r) => Math.round(niceMax * r))
 }
 
-// 1/2/5 系列の "nice number" に切り上げ
+// 1/2/5 系列の "nice number" に切り上げる。
+// 例: 17 → 20、234 → 500、6800 → 10000。
+// グラフの Y 軸目盛りを人間が読みやすい桁（1, 2, 5 × 10^n）に揃えるための一般的な手法。
 const niceCeil = (v: number): number => {
   if (v <= 0) return 1
   const exp = Math.floor(Math.log10(v))
