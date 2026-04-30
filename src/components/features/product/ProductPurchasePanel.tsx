@@ -3,6 +3,7 @@
 // 追加 (#131): 商品詳細ページの variant セレクター + カート追加ボタンの結合 Client Component
 // Server Component の ProductDetail から variant 一覧を受け取り、選択状態を管理する。
 import { useState } from 'react'
+import { computeVariantBasePrice } from '@/lib/pricing'
 import { AddToCartButton } from './AddToCartButton'
 import { ProductVariantSelector, type VariantOption } from './ProductVariantSelector'
 
@@ -34,8 +35,9 @@ export const ProductPurchasePanel = ({
   const [selectedVariant, setSelectedVariant] = useState<VariantOption | null>(null)
 
   // バリエーションあり商品の表示用情報
+  // pricing.ts の computeVariantBasePrice を再利用（priceDelta 反映と 0 円下限を一元管理）
   const displayPrice = hasVariants && selectedVariant
-    ? Math.max(0, productPrice + selectedVariant.priceDelta)
+    ? computeVariantBasePrice({ id: productId, price: productPrice }, selectedVariant)
     : productPrice
   const displayStock = hasVariants
     ? selectedVariant?.stock ?? variants.reduce((sum, v) => sum + v.stock, 0)

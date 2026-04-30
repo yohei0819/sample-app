@@ -19,13 +19,16 @@ export const getOrCreateCart = async (userId: string) => {
 }
 
 // 追加 (#131): variant 在庫を確認（指定時）し、無ければ Product.stock を返す
+// variantId が無効な場合は明示的なエラーメッセージを投げ、上位 API で 4xx を返せるようにする
 const getAvailableStock = async (productId: string, variantId: string | null) => {
   if (variantId) {
     const variant = await prisma.productVariant.findFirst({
       where: { id: variantId, productId },
       select: { stock: true },
     })
-    if (!variant) throw new Error('バリエーションが見つかりません')
+    if (!variant) {
+      throw new Error('指定されたバリエーションが見つかりません（削除された可能性があります）')
+    }
     return variant.stock
   }
   const product = await prisma.product.findUnique({
@@ -154,7 +157,10 @@ export const mergeLocalCart = async (
       if (!variant) continue
       stock = variant.stock
     } else {
-      // バリエーションあり商品で variantId 未指定はスキップ（不正データ）
+      // バリエーションあり商品で variantId 未指定の場合はサイレントにスキップする。
+      // ローカルカート（ゲスト時）は variant 機能導入前に作成された古いデータが含まれる可能性があり、
+      // マージ時にエラーで全体を中断するよりスキップする方が UX 上望ましいため。
+      // この場合ユーザーには UI 上の差分（マージされなかった items）で気づいてもらう想定。
       if (product.variants.length > 0) continue
       stock = product.stock
     }

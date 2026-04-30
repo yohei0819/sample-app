@@ -138,6 +138,28 @@ export const POST = async (req: NextRequest) => {
       }
     }
 
+    // 追加 (#131): 在庫減算を「createOrder より前」に実施
+    // 在庫不足の場合は createOrder を行わず注文レコードが残らないようにする。
+    // クーポン使用回数は既に incrementCouponUsedCountAtomic で増加しているが、
+    // 在庫減算失敗時は下記の catch で例外を再 throw し 500 を返すため
+    // クライアントは注文未確定として扱える（クーポン使用回数の補償は今回スコープ外）。
+    try {
+      for (const { product, variant, quantity } of itemsWithEffectivePrice) {
+        await decrementStock(product.id, quantity, {
+          userId: session.user.id,
+          variantId: variant?.id ?? null,
+          reason: '注文確定による出庫',
+        })
+      }
+    } catch (err) {
+      logger.error('[orders POST] 在庫減算失敗', { err })
+      const message = err instanceof Error ? err.message : '在庫の確保に失敗しました'
+      return NextResponse.json(
+        { error: message, code: 'STOCK_DECREMENT_FAILED' },
+        { status: 409 },
+      )
+    }
+
     const order = await createOrder({
       status: 'PENDING',
       totalPrice,
@@ -164,16 +186,6 @@ export const POST = async (req: NextRequest) => {
         })),
       },
     })
-
-    // 追加 (#131): 在庫減算（variant あれば variant 単位、なければ商品単位）
-    // 注: 個別 try/catch せず例外を伝播させ、上位の catch でロールバック扱いにする
-    for (const { product, variant, quantity } of itemsWithEffectivePrice) {
-      await decrementStock(product.id, quantity, {
-        userId: session.user.id,
-        variantId: variant?.id ?? null,
-        reason: `注文 ${order.id} による出庫`,
-      })
-    }
 
     // 追加: 注文確認メール送信（失敗してもorderレスポンスは正常に返す）
     if (session.user.email) {
