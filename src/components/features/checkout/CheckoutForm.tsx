@@ -138,7 +138,12 @@ export const CheckoutForm = ({ clientSecret, paymentIntentId, appliedCoupon, onC
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        items: items.map(({ id, quantity }) => ({ id, quantity })),
+        // 変更 (#131): variantId を含めて送信
+        items: items.map(({ id, quantity, variantId }) => ({
+          id,
+          quantity,
+          ...(variantId ? { variantId } : {}),
+        })),
         shippingAddress: data,
         stripePaymentIntentId: paymentIntentId,
         ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}), // 追加

@@ -2,10 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { createOrder, findOrdersByUserId } from '@/lib/db/orders'
-import { validateCartItems } from '@/lib/db/products'
+import { decrementStock, validateCartItems } from '@/lib/db/products' // 変更 (#131)
 import { findCouponByCode, incrementCouponUsedCountAtomic } from '@/lib/db/coupons' // 変更
 import { findActiveSalesForProducts } from '@/lib/db/sales' // 追加 (#107)
-import { getEffectivePrice } from '@/lib/sale' // 追加 (#107)
+import { computeUnitPrice } from '@/lib/pricing' // 変更 (#131): variant 差分を考慮した単価計算
 import type { Prisma } from '@/generated/prisma/client'
 import type { ShippingAddress } from '@/constants/checkout'
 import { sendOrderConfirmationEmail } from '@/lib/email/sendOrderConfirmation' // 追加
@@ -16,6 +16,7 @@ import { isEmailVerified } from '@/lib/emailVerificationGuard' // 追加 (#120)
 type CartItemInput = {
   id: string
   quantity: number
+  variantId?: string // 追加 (#131)
 }
 
 type RequestBody = {
@@ -77,17 +78,18 @@ export const POST = async (req: NextRequest) => {
   const couponCode = (body as RequestBody).couponCode // 追加
 
   try {
-    // 各商品の最新価格・在庫を DB から取得して検証
+    // 各商品の最新価格・在庫を DB から取得して検証（variantId 考慮）
     const productData = await validateCartItems(items)
 
     // 追加 (#107): セール価格をサーバ側で再計算
     const activeSales = await findActiveSalesForProducts(
       productData.map(({ product }) => product.id),
     )
-    const itemsWithEffectivePrice = productData.map(({ product, quantity }) => {
+    // 変更 (#131): variant 差分を考慮した単価計算
+    const itemsWithEffectivePrice = productData.map(({ product, variant, quantity }) => {
       const sale = activeSales.get(product.id) ?? null
-      const unitPrice = getEffectivePrice(product, sale)
-      return { product, quantity, unitPrice }
+      const unitPrice = computeUnitPrice(product, variant, sale)
+      return { product, variant, quantity, unitPrice }
     })
 
     // 合計金額（税抜小計） - セール価格反映
@@ -144,13 +146,34 @@ export const POST = async (req: NextRequest) => {
       user: { connect: { id: session.user.id } },
       ...(couponId ? { coupon: { connect: { id: couponId } } } : {}), // 追加
       items: {
-        create: itemsWithEffectivePrice.map(({ product, quantity, unitPrice }) => ({
+        // 変更 (#131): variantId / variantSnapshot を保存
+        create: itemsWithEffectivePrice.map(({ product, variant, quantity, unitPrice }) => ({
           quantity,
           unitPrice, // 変更 (#107): セール適用後の価格を保存
           product: { connect: { id: product.id } },
+          ...(variant
+            ? {
+                variant: { connect: { id: variant.id } },
+                variantSnapshot: {
+                  sku: variant.sku,
+                  attributes: variant.attributes,
+                  priceDelta: variant.priceDelta,
+                } as Prisma.InputJsonValue,
+              }
+            : {}),
         })),
       },
     })
+
+    // 追加 (#131): 在庫減算（variant あれば variant 単位、なければ商品単位）
+    // 注: 個別 try/catch せず例外を伝播させ、上位の catch でロールバック扱いにする
+    for (const { product, variant, quantity } of itemsWithEffectivePrice) {
+      await decrementStock(product.id, quantity, {
+        userId: session.user.id,
+        variantId: variant?.id ?? null,
+        reason: `注文 ${order.id} による出庫`,
+      })
+    }
 
     // 追加: 注文確認メール送信（失敗してもorderレスポンスは正常に返す）
     if (session.user.email) {

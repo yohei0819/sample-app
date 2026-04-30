@@ -38,6 +38,10 @@ export const CartItem = ({ item }: Props) => {
       {/* 商品情報 */}
       <div className="flex flex-1 flex-col gap-2">
         <p className="font-medium leading-tight">{item.name}</p>
+        {/* 追加 (#131): バリエーション情報を表示 */}
+        {item.variantLabel && (
+          <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
+        )}
         <p className="text-sm text-muted-foreground">
           ¥{item.price.toLocaleString()}
         </p>
@@ -48,7 +52,7 @@ export const CartItem = ({ item }: Props) => {
             variant="outline"
             size="icon"
             className="h-7 w-7"
-            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+            onClick={() => updateQuantity(item.id, item.quantity - 1, item.variantId ?? null)}
             aria-label={`${item.name}の数量を減らす`}
           >
             <Minus size={14} />
@@ -60,7 +64,7 @@ export const CartItem = ({ item }: Props) => {
             variant="outline"
             size="icon"
             className="h-7 w-7"
-            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+            onClick={() => updateQuantity(item.id, item.quantity + 1, item.variantId ?? null)}
             aria-label={`${item.name}の数量を増やす`}
           >
             <Plus size={14} />
@@ -77,7 +81,7 @@ export const CartItem = ({ item }: Props) => {
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-          onClick={() => removeItem(item.id)}
+          onClick={() => removeItem(item.id, item.variantId ?? null)}
           aria-label={`${item.name}をカートから削除`}
         >
           <Trash2 size={16} />

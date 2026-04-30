@@ -9,6 +9,7 @@ vi.mock('@/lib/db/orders', () => ({
 }))
 vi.mock('@/lib/db/products', () => ({
   validateCartItems: vi.fn(),
+  decrementStock: vi.fn().mockResolvedValue(undefined), // 追加 (#131)
 }))
 vi.mock('@/lib/db/coupons', () => ({
   findCouponByCode: vi.fn(),
