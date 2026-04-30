@@ -191,8 +191,30 @@ model Product {
   backInStockSubscriptions BackInStockSubscription[] // 追加: バックインストック通知購読
   stockMovements           StockMovement[] // 追加 (#106)
   sales                    Sale[] // 追加 (#107): タイムセール
+  variants                 ProductVariant[] // 追加 (#131): 商品バリエーション
 
   @@map("products")
+}
+
+// 追加 (#131): 商品バリエーション（サイズ・カラーなど）
+// 1 商品が複数 SKU を持てる。バリエーションが存在する場合は variant 単位で在庫・価格差分を管理する。
+model ProductVariant {
+  id         String   @id @default(cuid())
+  productId  String
+  sku        String   @unique
+  // attributes: バリエーション属性のキー・値（例: { "size": "M", "color": "red" }）
+  attributes Json
+  priceDelta Int      @default(0) // 基本価格に対する差分（円・正負可）
+  stock      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
 }
 
 // 追加 (#107): タイムセールモデル
@@ -297,6 +319,12 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
+  // 追加 (#131): 商品バリエーション（任意）
+  variantId       String?
+  variant         ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  // 注文時点の SKU・属性スナップショット（variant が後で削除されても履歴に残す）
+  variantSnapshot Json?
+
   @@map("order_items")
 }
 
@@ -326,7 +354,13 @@ model CartItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  @@unique([cartId, productId])
+  // 追加 (#131): 商品バリエーション（任意）
+  variantId String?
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  // 注: PostgreSQL は NULL を区別するため、variantId が NULL の場合は (cartId, productId) で重複不可、
+  //     variantId 指定時は (cartId, productId, variantId) で重複不可となり、後方互換が保たれる
+  @@unique([cartId, productId, variantId])
   @@map("cart_items")
 }
 
