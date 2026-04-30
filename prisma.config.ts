@@ -7,6 +7,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    seed: "node --import tsx/esm prisma/seed.ts",
   },
   datasource: {
     // TODO: 将来的に src/env.ts（Zod）で DATABASE_URL を検証・型付けする予定
