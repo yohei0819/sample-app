@@ -84,6 +84,13 @@ export const AdminHeader = () => {
           >
             タイムセール
           </Link>
+          {/* 追加 (#133): 売上レポート */}
+          <Link
+            href="/admin/reports"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            売上レポート
+          </Link>
         </nav>
       </div>
     </header>
