@@ -10,6 +10,7 @@ import { SalesReportKpi } from '@/components/features/admin/SalesReportKpi'
 import { findSalesByPeriod } from '@/lib/db/stats'
 import {
   formatBucketKeyJST,
+  getDefaultFromBoundary,
   parseGranularity,
   parseJstDateInput,
   summarizeKpi,
@@ -26,24 +27,6 @@ export const metadata = {
 // デフォルト期間: 直近 30 日（day）/ 直近 12 ヶ月（month）
 const DEFAULT_DAYS = 30
 const DEFAULT_MONTHS = 12
-
-// JST のタイムゾーンオフセット（ミリ秒）。salesReport.ts と同一の固定値。
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000
-
-// 任意の Date から JST 当日 00:00 JST の Date を返す（カレンダー算術用）
-const startOfJstDay = (d: Date): Date => {
-  const jst = new Date(d.getTime() + JST_OFFSET_MS)
-  const utcMs =
-    Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate()) - JST_OFFSET_MS
-  return new Date(utcMs)
-}
-
-// 任意の Date から JST 当月 1 日 00:00 JST の Date を返す
-const startOfJstMonth = (d: Date): Date => {
-  const jst = new Date(d.getTime() + JST_OFFSET_MS)
-  const utcMs = Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), 1) - JST_OFFSET_MS
-  return new Date(utcMs)
-}
 
 // searchParams から first value を取り出すユーティリティ（配列形式に備える）
 const firstParam = (v: string | string[] | undefined): string | undefined => {
@@ -70,32 +53,10 @@ export default async function ReportsPage({ searchParams }: Props) {
   // to 未指定時は現在時刻（now < 翌日 00:00 JST のため半開区間の右端として安全）
   const to = toBoundary ?? now
 
-  let from: Date
-  if (fromBoundary) {
-    from = fromBoundary
-  } else if (granularity === 'month') {
-    // JST 当月 1 日 00:00 から (DEFAULT_MONTHS - 1) ヶ月遡る
-    const base = startOfJstMonth(to)
-    const jst = new Date(base.getTime() + JST_OFFSET_MS)
-    from = new Date(
-      Date.UTC(
-        jst.getUTCFullYear(),
-        jst.getUTCMonth() - (DEFAULT_MONTHS - 1),
-        1,
-      ) - JST_OFFSET_MS,
-    )
-  } else {
-    // JST 当日 00:00 から (DEFAULT_DAYS - 1) 日遡る
-    const base = startOfJstDay(to)
-    const jst = new Date(base.getTime() + JST_OFFSET_MS)
-    from = new Date(
-      Date.UTC(
-        jst.getUTCFullYear(),
-        jst.getUTCMonth(),
-        jst.getUTCDate() - (DEFAULT_DAYS - 1),
-      ) - JST_OFFSET_MS,
-    )
-  }
+  // from 未指定時は granularity に応じて JST 基準のデフォルト期間を算出
+  const from =
+    fromBoundary ??
+    getDefaultFromBoundary(to, granularity, { days: DEFAULT_DAYS, months: DEFAULT_MONTHS })
 
   const buckets = await findSalesByPeriod({ from, to, granularity })
   const kpi = summarizeKpi(buckets)

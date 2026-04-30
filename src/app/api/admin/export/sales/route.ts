@@ -10,10 +10,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { toCsvWithBom } from '@/lib/csv'
 import { findSalesByPeriod } from '@/lib/db/stats'
-import { buildSalesCsvRows, parseGranularity, parseJstDateInput } from '@/lib/salesReport'
-
-// JST のタイムゾーンオフセット（ミリ秒）。salesReport.ts と同一の固定値。
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000
+import {
+  buildSalesCsvRows,
+  getDefaultFromBoundary,
+  parseGranularity,
+  parseJstDateInput,
+} from '@/lib/salesReport'
 
 // デフォルト期間: 直近 30 日（day）/ 直近 12 ヶ月（month）
 const DEFAULT_DAYS = 30
@@ -35,27 +37,10 @@ export const GET = async (req: NextRequest) => {
   // to 未指定時は現在時刻（now < 翌日 00:00 JST のため半開区間の右端として安全）
   const to = toBoundary ?? now
 
-  let from: Date
-  if (fromBoundary) {
-    from = fromBoundary
-  } else if (granularity === 'month') {
-    // JST 当月 1 日 00:00 から (DEFAULT_MONTHS - 1) ヶ月遡る
-    const jst = new Date(to.getTime() + JST_OFFSET_MS)
-    from = new Date(
-      Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth() - (DEFAULT_MONTHS - 1), 1) -
-        JST_OFFSET_MS,
-    )
-  } else {
-    // JST 当日 00:00 から (DEFAULT_DAYS - 1) 日遡る
-    const jst = new Date(to.getTime() + JST_OFFSET_MS)
-    from = new Date(
-      Date.UTC(
-        jst.getUTCFullYear(),
-        jst.getUTCMonth(),
-        jst.getUTCDate() - (DEFAULT_DAYS - 1),
-      ) - JST_OFFSET_MS,
-    )
-  }
+  // from 未指定時は granularity に応じて JST 基準のデフォルト期間を算出
+  const from =
+    fromBoundary ??
+    getDefaultFromBoundary(to, granularity, { days: DEFAULT_DAYS, months: DEFAULT_MONTHS })
 
   const buckets = await findSalesByPeriod({ from, to, granularity })
   const { headers, rows } = buildSalesCsvRows(buckets, granularity)

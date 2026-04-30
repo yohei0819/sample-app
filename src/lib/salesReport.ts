@@ -59,14 +59,45 @@ export const parseJstDateInput = (
   const year = Number(m[1])
   const month = Number(m[2])
   const day = Number(m[3])
-  // 月・日が範囲外（13月・32日など）は弾く。Date.UTC は overflow を吸収してしまうため事前検証する。
+  // 月・日の上下限を粗く弾く（13月・32日・0日など）
   if (month < 1 || month > 12 || day < 1 || day > 31) return undefined
+  // 暦上存在しない日付（'2026-02-30' / 平年の '2025-02-29' / '2026-04-31' 等）を弾く。
+  // Date.UTC は overflow を吸収してしまうため、ラウンドトリップで Y/M/D の一致を確認する。
+  const probe = new Date(Date.UTC(year, month - 1, day))
+  if (
+    probe.getUTCFullYear() !== year ||
+    probe.getUTCMonth() !== month - 1 ||
+    probe.getUTCDate() !== day
+  ) {
+    return undefined
+  }
   // to は半開区間の右端なので翌日 00:00 JST に正規化（Date.UTC が日付 overflow を吸収）
   const dayOffset = kind === 'to' ? 1 : 0
   const utcMs = Date.UTC(year, month - 1, day + dayOffset) - JST_OFFSET_MS
   const date = new Date(utcMs)
   if (Number.isNaN(date.getTime())) return undefined
   return date
+}
+
+// 追加 (#133): from 未指定時のデフォルト開始境界を JST 基準で算出する共通ヘルパー。
+// page.tsx と route.ts で重複していた JST 変換ロジックを集約する。
+// - granularity='day'   → to を含む JST 当日 00:00 から (DEFAULT_DAYS - 1) 日遡る
+// - granularity='month' → to を含む JST 当月 1 日 00:00 から (DEFAULT_MONTHS - 1) ヶ月遡る
+export const getDefaultFromBoundary = (
+  to: Date,
+  granularity: Granularity,
+  options: { days: number; months: number },
+): Date => {
+  // to は parseJstDateInput が返す JST 境界、もしくは「現在時刻」のいずれか。
+  // どちらの場合も +JST_OFFSET_MS して UTC として読めば JST のカレンダー値が得られる。
+  const jst = new Date(to.getTime() + JST_OFFSET_MS)
+  const y = jst.getUTCFullYear()
+  const m = jst.getUTCMonth()
+  const d = jst.getUTCDate()
+  if (granularity === 'month') {
+    return new Date(Date.UTC(y, m - (options.months - 1), 1) - JST_OFFSET_MS)
+  }
+  return new Date(Date.UTC(y, m, d - (options.days - 1)) - JST_OFFSET_MS)
 }
 
 // 任意の Date を JST 固定で 'YYYY-MM-DD' / 'YYYY-MM' に整形

@@ -5,6 +5,7 @@ import {
   enumerateBucketKeys,
   fillMissingBuckets,
   formatBucketKeyJST,
+  getDefaultFromBoundary,
   parseGranularity,
   parseJstDateInput,
   summarizeKpi,
@@ -171,10 +172,75 @@ describe('parseJstDateInput', () => {
     expect(parseJstDateInput('2026-04-32', 'from')).toBeUndefined()
     expect(parseJstDateInput('2026-04-00', 'from')).toBeUndefined()
   })
+  // 追加 (#133): 暦上存在しない日付のラウンドトリップ検証
+  it('暦上存在しない日付（2/30・4/31 など）は undefined', () => {
+    expect(parseJstDateInput('2026-02-30', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-02-29', 'from')).toBeUndefined() // 平年
+    expect(parseJstDateInput('2026-04-31', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-06-31', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-09-31', 'to')).toBeUndefined()
+    expect(parseJstDateInput('2026-11-31', 'to')).toBeUndefined()
+  })
+  it('うるう年の 2/29 は受理する', () => {
+    // 2024 はうるう年。2024-02-29 00:00 JST = 2024-02-28 15:00 UTC
+    const d = parseJstDateInput('2024-02-29', 'from')
+    expect(d).toBeInstanceOf(Date)
+    expect(d!.toISOString()).toBe('2024-02-28T15:00:00.000Z')
+  })
+  it('各月の最終日（1/31・3/31・12/31 など）は受理する', () => {
+    expect(parseJstDateInput('2026-01-31', 'from')!.toISOString()).toBe(
+      '2026-01-30T15:00:00.000Z',
+    )
+    expect(parseJstDateInput('2026-03-31', 'from')!.toISOString()).toBe(
+      '2026-03-30T15:00:00.000Z',
+    )
+    expect(parseJstDateInput('2026-04-30', 'from')!.toISOString()).toBe(
+      '2026-04-29T15:00:00.000Z',
+    )
+    expect(parseJstDateInput('2026-12-31', 'from')!.toISOString()).toBe(
+      '2026-12-30T15:00:00.000Z',
+    )
+  })
   // 集計クエリと整合：from='2026-04-30' / to='2026-04-30' で「JST 4/30 全日」を半開区間でカバー
   it('同日の from / to で JST 当日全 24 時間を半開区間でカバーする', () => {
     const from = parseJstDateInput('2026-04-30', 'from')!
     const to = parseJstDateInput('2026-04-30', 'to')!
     expect(to.getTime() - from.getTime()).toBe(24 * 60 * 60 * 1000)
+  })
+})
+
+// 追加 (#133): デフォルト期間ヘルパーのテスト
+describe('getDefaultFromBoundary', () => {
+  const opts = { days: 30, months: 12 }
+
+  it("granularity='day' で to を含む JST 当日から 29 日遡った 00:00 JST を返す", () => {
+    // to = 2026-04-30 12:34 JST → JST 当日 = 2026-04-30
+    // 29 日遡る → 2026-04-01 00:00 JST = 2026-03-31 15:00 UTC
+    const to = new Date('2026-04-30T03:34:00.000Z') // 2026-04-30 12:34 JST
+    const from = getDefaultFromBoundary(to, 'day', opts)
+    expect(from.toISOString()).toBe('2026-03-31T15:00:00.000Z')
+  })
+
+  it("granularity='month' で to を含む JST 当月から 11 ヶ月遡った 1 日 00:00 JST を返す", () => {
+    // to = 2026-04-30 12:34 JST → JST 当月 = 2026-04
+    // 11 ヶ月遡る → 2025-05-01 00:00 JST = 2025-04-30 15:00 UTC
+    const to = new Date('2026-04-30T03:34:00.000Z')
+    const from = getDefaultFromBoundary(to, 'month', opts)
+    expect(from.toISOString()).toBe('2025-04-30T15:00:00.000Z')
+  })
+
+  it('JST 日付境界（UTC 15:00 == JST 翌日 00:00）を正しく扱う', () => {
+    // 2026-04-29 15:00 UTC = 2026-04-30 00:00 JST
+    const to = new Date('2026-04-29T15:00:00.000Z')
+    const from = getDefaultFromBoundary(to, 'day', opts)
+    // JST 当日 = 2026-04-30 → 29 日遡って 2026-04-01 00:00 JST
+    expect(from.toISOString()).toBe('2026-03-31T15:00:00.000Z')
+  })
+
+  it('parseJstDateInput が返す境界 Date を入力しても期待通り動作する', () => {
+    const to = parseJstDateInput('2026-04-30', 'to')! // 2026-05-01 00:00 JST
+    const from = getDefaultFromBoundary(to, 'day', opts)
+    // JST 当日 = 2026-05-01 → 29 日遡って 2026-04-02 00:00 JST = 2026-04-01 15:00 UTC
+    expect(from.toISOString()).toBe('2026-04-01T15:00:00.000Z')
   })
 })
