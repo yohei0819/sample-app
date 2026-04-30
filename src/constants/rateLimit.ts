@@ -23,6 +23,12 @@ export const RATE_LIMITS = {
   PASSWORD_RESET_REQUEST: 1,
   // 追加 (#129): パスワードリセット実行（IP 単位、ブルートフォース対策）
   PASSWORD_RESET_CONSUME: 10,
+  // 追加 (#132): レビュー画像アップロード（IP 単位）
+  REVIEW_IMAGE_UPLOAD: 10,
+  // 追加 (#132): レビュー有用性投票
+  REVIEW_VOTE: 30,
+  // 追加 (#132): レビュー投稿（連投・スパム対策）
+  REVIEW_POST: 5,
 } as const
 
 export type RateLimitKey = keyof typeof RATE_LIMITS

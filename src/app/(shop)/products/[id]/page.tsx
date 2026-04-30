@@ -24,6 +24,8 @@ const getCachedProductById = cache(findProductById)
 type Props = {
   // 変更: Next.js 15 の非同期 params
   params: Promise<{ id: string }>
+  // 追加 (#132): レビューソート用の searchParams
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }
 
 // OGPメタデータ生成
@@ -57,8 +59,10 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
   }
 }
 
-export default async function ProductDetailPage({ params }: Props) {
+export default async function ProductDetailPage({ params, searchParams }: Props) {
   const { id } = await params // 変更: Next.js 15 の非同期 params
+  const sp = (await searchParams) ?? {} // 追加 (#132)
+  const reviewSortParam = typeof sp.reviewSort === 'string' ? sp.reviewSort : undefined // 追加 (#132)
   const product = await getCachedProductById(id) // 変更: キャッシュ経由で取得
 
   if (!product) {
@@ -153,7 +157,7 @@ export default async function ProductDetailPage({ params }: Props) {
       {/* レビューセクション */}
       <div className="container mx-auto px-4 py-8 space-y-8">
         <Suspense fallback={<p className="text-sm text-muted-foreground">レビューを読み込み中...</p>}>
-          <ReviewList productId={product.id} />
+          <ReviewList productId={product.id} sort={reviewSortParam} />
         </Suspense>
         {/* レビュー投稿フォーム */}
         <ReviewForm
