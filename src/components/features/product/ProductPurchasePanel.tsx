@@ -36,9 +36,10 @@ export const ProductPurchasePanel = ({
 
   // バリエーションあり商品の表示用情報
   // pricing.ts の computeVariantBasePrice を再利用（priceDelta 反映と 0 円下限を一元管理）
-  const displayPrice = hasVariants && selectedVariant
-    ? computeVariantBasePrice({ id: productId, price: productPrice }, selectedVariant)
-    : productPrice
+  const displayPrice =
+    hasVariants && selectedVariant
+      ? computeVariantBasePrice({ id: productId, price: productPrice }, selectedVariant)
+      : productPrice
   const displayStock = hasVariants
     ? selectedVariant?.stock ?? variants.reduce((sum, v) => sum + v.stock, 0)
     : productStock

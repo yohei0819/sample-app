@@ -141,7 +141,7 @@ export const POST = async (req: NextRequest) => {
     // 追加 (#131): 在庫減算を「createOrder より前」に実施
     // 在庫不足の場合は createOrder を行わず注文レコードが残らないようにする。
     // クーポン使用回数は既に incrementCouponUsedCountAtomic で増加しているが、
-    // 在庫減算失敗時は下記の catch で例外を再 throw し 500 を返すため
+    // 在庫減算失敗時は下記の catch で 409 (STOCK_DECREMENT_FAILED) を返すため
     // クライアントは注文未確定として扱える（クーポン使用回数の補償は今回スコープ外）。
     try {
       for (const { product, variant, quantity } of itemsWithEffectivePrice) {
