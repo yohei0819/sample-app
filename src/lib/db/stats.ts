@@ -69,6 +69,7 @@ export const getRecentOrders = async (): Promise<RecentOrder[]> => {
 //   PENDING・CANCELLED は除外
 // - 集計はタイムゾーン Asia/Tokyo 固定（date_trunc を AT TIME ZONE で適用）
 // - refund は Order.refundedAmount の合計（純売上 = gross - refund）
+// - 期間は半開区間 [from, to) として扱う（呼び出し側で from / to を JST 境界に正規化済み）
 // - 欠損バケットは fillMissingBuckets で 0 埋めし、グラフ表示用の連続配列にする
 export const findSalesByPeriod = async (params: {
   from: Date
@@ -105,7 +106,7 @@ export const findSalesByPeriod = async (params: {
     FROM orders
     WHERE status::text = ANY(${includedStatuses}::text[])
       AND "createdAt" >= ${from}
-      AND "createdAt" <= ${to}
+      AND "createdAt" < ${to}
     GROUP BY bucket
     ORDER BY bucket ASC
   `

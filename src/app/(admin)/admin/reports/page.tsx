@@ -3,11 +3,18 @@
 // - 期間内売上合計 / 注文数 / 平均注文単価 / 返金額 を KPI カードで表示
 // - 自前 SVG 折れ線グラフで net（純売上）の推移を表示
 // - 同条件の CSV ダウンロードリンクを提供
+// - 入力日付は JST のカレンダー日付として解釈し、半開区間 [from, to) で集計する
 import { SalesReportChart } from '@/components/features/admin/SalesReportChart'
 import { SalesReportFilters } from '@/components/features/admin/SalesReportFilters'
 import { SalesReportKpi } from '@/components/features/admin/SalesReportKpi'
 import { findSalesByPeriod } from '@/lib/db/stats'
-import { parseGranularity, summarizeKpi, type Granularity } from '@/lib/salesReport'
+import {
+  formatBucketKeyJST,
+  parseGranularity,
+  parseJstDateInput,
+  summarizeKpi,
+  type Granularity,
+} from '@/lib/salesReport'
 
 // 管理画面は DB 必須のため動的レンダリングを強制
 export const dynamic = 'force-dynamic'
@@ -20,19 +27,22 @@ export const metadata = {
 const DEFAULT_DAYS = 30
 const DEFAULT_MONTHS = 12
 
-// 'YYYY-MM-DD' に整形（input[type=date] のデフォルト値用、ローカルタイムゾーンの日付）
-const toDateInputValue = (d: Date): string => {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+// JST のタイムゾーンオフセット（ミリ秒）。salesReport.ts と同一の固定値。
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+// 任意の Date から JST 当日 00:00 JST の Date を返す（カレンダー算術用）
+const startOfJstDay = (d: Date): Date => {
+  const jst = new Date(d.getTime() + JST_OFFSET_MS)
+  const utcMs =
+    Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate()) - JST_OFFSET_MS
+  return new Date(utcMs)
 }
 
-// 'YYYY-MM-DD' を Date に変換。空 / 不正値は undefined。
-const parseDateParam = (s: string | undefined): Date | undefined => {
-  if (!s) return undefined
-  const d = new Date(s)
-  return Number.isNaN(d.getTime()) ? undefined : d
+// 任意の Date から JST 当月 1 日 00:00 JST の Date を返す
+const startOfJstMonth = (d: Date): Date => {
+  const jst = new Date(d.getTime() + JST_OFFSET_MS)
+  const utcMs = Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), 1) - JST_OFFSET_MS
+  return new Date(utcMs)
 }
 
 // searchParams から first value を取り出すユーティリティ（配列形式に備える）
@@ -49,31 +59,57 @@ export default async function ReportsPage({ searchParams }: Props) {
   const sp = await searchParams
   const granularity: Granularity = parseGranularity(firstParam(sp.granularity))
 
-  const now = new Date()
-  const toParam = parseDateParam(firstParam(sp.to))
-  const fromParam = parseDateParam(firstParam(sp.from))
+  const fromInput = firstParam(sp.from)
+  const toInput = firstParam(sp.to)
 
-  const to = toParam ?? now
+  // 入力は JST のカレンダー日付として解釈し、半開区間 [from, to) を構築する
+  const fromBoundary = parseJstDateInput(fromInput, 'from')
+  const toBoundary = parseJstDateInput(toInput, 'to')
+
+  const now = new Date()
+  // to 未指定時は現在時刻（now < 翌日 00:00 JST のため半開区間の右端として安全）
+  const to = toBoundary ?? now
+
   let from: Date
-  if (fromParam) {
-    from = fromParam
+  if (fromBoundary) {
+    from = fromBoundary
   } else if (granularity === 'month') {
-    const d = new Date(to)
-    d.setMonth(d.getMonth() - (DEFAULT_MONTHS - 1))
-    from = d
+    // JST 当月 1 日 00:00 から (DEFAULT_MONTHS - 1) ヶ月遡る
+    const base = startOfJstMonth(to)
+    const jst = new Date(base.getTime() + JST_OFFSET_MS)
+    from = new Date(
+      Date.UTC(
+        jst.getUTCFullYear(),
+        jst.getUTCMonth() - (DEFAULT_MONTHS - 1),
+        1,
+      ) - JST_OFFSET_MS,
+    )
   } else {
-    const d = new Date(to)
-    d.setDate(d.getDate() - (DEFAULT_DAYS - 1))
-    from = d
+    // JST 当日 00:00 から (DEFAULT_DAYS - 1) 日遡る
+    const base = startOfJstDay(to)
+    const jst = new Date(base.getTime() + JST_OFFSET_MS)
+    from = new Date(
+      Date.UTC(
+        jst.getUTCFullYear(),
+        jst.getUTCMonth(),
+        jst.getUTCDate() - (DEFAULT_DAYS - 1),
+      ) - JST_OFFSET_MS,
+    )
   }
 
   const buckets = await findSalesByPeriod({ from, to, granularity })
   const kpi = summarizeKpi(buckets)
 
+  // 表示用の 'YYYY-MM-DD' は JST 基準で算出
+  // - 入力値があればそのまま（ユーザの選択日を尊重）
+  // - 未指定時は from / now を JST 日付に整形（to 表示は現在時刻の JST 当日）
+  const fromDisplay = fromInput ?? formatBucketKeyJST(from, 'day')
+  const toDisplay = toInput ?? formatBucketKeyJST(now, 'day')
+
   // 現在のフィルタ条件をそのまま CSV エクスポート API に引き継ぐ
   const csvParams = new URLSearchParams({
-    from: toDateInputValue(from),
-    to: toDateInputValue(to),
+    from: fromDisplay,
+    to: toDisplay,
     granularity,
   })
   const csvHref = `/api/admin/export/sales?${csvParams.toString()}`
@@ -88,8 +124,8 @@ export default async function ReportsPage({ searchParams }: Props) {
       </div>
 
       <SalesReportFilters
-        from={toDateInputValue(from)}
-        to={toDateInputValue(to)}
+        from={fromDisplay}
+        to={toDisplay}
         granularity={granularity}
         csvHref={csvHref}
       />

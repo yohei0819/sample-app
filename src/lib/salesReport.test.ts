@@ -6,6 +6,7 @@ import {
   fillMissingBuckets,
   formatBucketKeyJST,
   parseGranularity,
+  parseJstDateInput,
   summarizeKpi,
 } from './salesReport'
 
@@ -128,5 +129,52 @@ describe('buildSalesCsvRows', () => {
   it('month 粒度ではラベルが「月」になる', () => {
     const { headers } = buildSalesCsvRows(buckets, 'month')
     expect(headers[0]).toBe('月')
+  })
+})
+
+describe('parseJstDateInput', () => {
+  // 2026-04-30 00:00 JST = 2026-04-29 15:00 UTC
+  it("kind='from' は 'YYYY-MM-DD' を JST 当日 00:00（= UTC 前日 15:00）として返す", () => {
+    const d = parseJstDateInput('2026-04-30', 'from')
+    expect(d).toBeInstanceOf(Date)
+    expect(d!.toISOString()).toBe('2026-04-29T15:00:00.000Z')
+  })
+  // to=2026-04-30 → 翌日 00:00 JST = 2026-04-30 15:00 UTC（半開区間の右端）
+  it("kind='to' は翌日 00:00 JST に正規化する（半開区間の右端）", () => {
+    const d = parseJstDateInput('2026-04-30', 'to')
+    expect(d!.toISOString()).toBe('2026-04-30T15:00:00.000Z')
+  })
+  // 月末→翌月 1 日へオーバーフロー（Date.UTC が吸収）
+  it("kind='to' で月末の場合は翌月 1 日 00:00 JST になる", () => {
+    const d = parseJstDateInput('2026-04-30', 'to')
+    // 2026-05-01 00:00 JST = 2026-04-30 15:00 UTC
+    expect(d!.toISOString()).toBe('2026-04-30T15:00:00.000Z')
+  })
+  it("kind='to' で 12 月末は翌年 1 月 1 日 00:00 JST になる", () => {
+    const d = parseJstDateInput('2026-12-31', 'to')
+    // 2027-01-01 00:00 JST = 2026-12-31 15:00 UTC
+    expect(d!.toISOString()).toBe('2026-12-31T15:00:00.000Z')
+  })
+  it('空文字 / null / undefined は undefined', () => {
+    expect(parseJstDateInput('', 'from')).toBeUndefined()
+    expect(parseJstDateInput(null, 'from')).toBeUndefined()
+    expect(parseJstDateInput(undefined, 'to')).toBeUndefined()
+  })
+  it('フォーマット不正は undefined', () => {
+    expect(parseJstDateInput('2026/04/30', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-4-30', 'from')).toBeUndefined()
+    expect(parseJstDateInput('abc', 'from')).toBeUndefined()
+  })
+  it('月・日が範囲外なら undefined（13 月や 32 日は弾く）', () => {
+    expect(parseJstDateInput('2026-13-01', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-00-01', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-04-32', 'from')).toBeUndefined()
+    expect(parseJstDateInput('2026-04-00', 'from')).toBeUndefined()
+  })
+  // 集計クエリと整合：from='2026-04-30' / to='2026-04-30' で「JST 4/30 全日」を半開区間でカバー
+  it('同日の from / to で JST 当日全 24 時間を半開区間でカバーする', () => {
+    const from = parseJstDateInput('2026-04-30', 'from')!
+    const to = parseJstDateInput('2026-04-30', 'to')!
+    expect(to.getTime() - from.getTime()).toBe(24 * 60 * 60 * 1000)
   })
 })

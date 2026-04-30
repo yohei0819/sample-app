@@ -43,6 +43,32 @@ export const parseGranularity = (input: string | null | undefined): Granularity 
   return 'day'
 }
 
+// 追加 (#133): 'YYYY-MM-DD' 入力を JST のカレンダー日付として境界 Date に正規化する。
+// 集計クエリは AT TIME ZONE 'Asia/Tokyo' で JST バケット化するため、入力側も JST 基準で
+// 半開区間 [from, to) を構築する必要がある。
+// - kind='from' → 当該日付の 00:00 JST を表す Date（UTC では前日 15:00）
+// - kind='to'   → 当該日付の翌日 00:00 JST を表す Date（半開区間の右端）
+// 不正値 / undefined / 空文字は undefined を返す。
+export const parseJstDateInput = (
+  input: string | null | undefined,
+  kind: 'from' | 'to',
+): Date | undefined => {
+  if (!input) return undefined
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input)
+  if (!m) return undefined
+  const year = Number(m[1])
+  const month = Number(m[2])
+  const day = Number(m[3])
+  // 月・日が範囲外（13月・32日など）は弾く。Date.UTC は overflow を吸収してしまうため事前検証する。
+  if (month < 1 || month > 12 || day < 1 || day > 31) return undefined
+  // to は半開区間の右端なので翌日 00:00 JST に正規化（Date.UTC が日付 overflow を吸収）
+  const dayOffset = kind === 'to' ? 1 : 0
+  const utcMs = Date.UTC(year, month - 1, day + dayOffset) - JST_OFFSET_MS
+  const date = new Date(utcMs)
+  if (Number.isNaN(date.getTime())) return undefined
+  return date
+}
+
 // 任意の Date を JST 固定で 'YYYY-MM-DD' / 'YYYY-MM' に整形
 export const formatBucketKeyJST = (date: Date, granularity: Granularity): string => {
   // UTC に +9h 加算して JST のカレンダー日付を取得
